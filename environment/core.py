@@ -35,9 +35,12 @@ class OrganoidEnv(gym.Env):
         # Discrete(8): Stimulate one of 8 specific neuron subgroups
         self.action_space = spaces.Discrete(self.n_act_groups)
 
-        # --- Observation Space (Day 3) ---
-        # Box(0, 1, shape=(10,)): Normalized firing rates of 10 subgroups
-        self.observation_space = spaces.Box(low=0, high=1, shape=(self.n_obs_groups,), dtype=np.float32)
+        # --- Observation Space ---
+        # 10 (Fire rates) + 2 (Current Cursor [x,y]) + 2 (Target [x,y]) = 14 dimensions
+        self.observation_space = spaces.Box(low=0, high=1, shape=(self.n_obs_groups + 4,), dtype=np.float32)
+
+        # --- Target Task Setup ---
+        self.target_pos = np.array([0.8, 0.8]) # The goal for the organoid
 
         # --- Brian2 Network Setup ---
         self.network = None # Will be initialized in reset()
@@ -161,8 +164,9 @@ class OrganoidEnv(gym.Env):
         # Run initialization
         self.network.run(10*ms)
         
-        # Reset motor state
+        # Reset motor and task state
         self.cursor_pos = np.array([0.5, 0.5])
+        self.target_pos = np.random.rand(2) # Randomized target per episode
         
         return self._get_obs(), {}
 
@@ -184,32 +188,71 @@ class OrganoidEnv(gym.Env):
         # 5. Get Observation
         obs = self._get_obs()
         
-        # 6. Calculate Reward (Placeholder - to be defined by task)
-        reward = 0.0 
+        # 6. Calculate Reward (Distance-based for Target Task)
+        reward = self._calculate_reward()
         
         # 7. Update Motor Output (Move Cursor based on activity)
         self._update_motor_output()
         
         # 8. Apply Dopamine Learning
+        # We only apply learning if there is a reward (or penalty)
         apply_dopamine(self.synapses, reward)
         
         # 9. Check Done
-        terminated = False
+        dist = np.linalg.norm(self.cursor_pos - self.target_pos)
+        terminated = dist < 0.05 # Goal reached
         truncated = False
         info = {
             'cursor_pos': self.cursor_pos.tolist(),
+            'target_pos': self.target_pos.tolist(),
+            'distance': float(dist),
             'total_spikes': len(self.spike_mon.t)
         }
         
         return obs, reward, terminated, truncated, info
 
+    def _calculate_reward(self):
+        """
+        Rewards the organoid for moving closer to the target.
+        """
+        dist = np.linalg.norm(self.cursor_pos - self.target_pos)
+        
+        # Sparse or continuous reward
+        if dist < 0.1:
+            return 10.0 # High reward for being close
+        elif dist < 0.3:
+            return 1.0 # Moderate reward
+        
+        return 0.0 # No reward far away
+
+    def _get_obs(self):
+        """
+        Returns normalized spike rates + cursor pos + target pos.
+        """
+        current_t = self.network.t
+        window = 100*ms
+        
+        # 1. Neural Activity Features
+        if len(self.spike_mon.t) > 0:
+            recent_spikes_idx = self.spike_mon.i[self.spike_mon.t > current_t - window]
+        else:
+            recent_spikes_idx = []
+        
+        obs_group_size = self.n_neurons // self.n_obs_groups
+        counts, _ = np.histogram(recent_spikes_idx, bins=self.n_obs_groups, range=(0, self.n_neurons))
+        
+        max_spikes = obs_group_size * 20 
+        neural_obs = (counts / max_spikes).astype(np.float32)
+        neural_obs = np.clip(neural_obs, 0, 1) 
+        
+        # 2. task State Features
+        task_obs = np.concatenate([self.cursor_pos, self.target_pos]).astype(np.float32)
+        
+        return np.concatenate([neural_obs, task_obs])
+        
     def _update_motor_output(self):
         """
         Translates activity in motor neurons (900-1000) into cursor movement.
-        Neurons 900-925: Up
-        Neurons 926-950: Down
-        Neurons 951-975: Left
-        Neurons 976-1000: Right
         """
         current_t = self.network.t
         window = 100*ms
@@ -222,7 +265,6 @@ class OrganoidEnv(gym.Env):
             motor_indices = []
             
         # Count activity per quadrant
-        quad_size = (self.n_neurons - self.output_neuron_start) // 4
         up = np.sum((motor_indices >= 900) & (motor_indices < 925))
         down = np.sum((motor_indices >= 925) & (motor_indices < 950))
         left = np.sum((motor_indices >= 950) & (motor_indices < 975))
@@ -249,27 +291,6 @@ class OrganoidEnv(gym.Env):
         if end_idx <= self.n_neurons:
              # Stimulate this subgroup
              self.neurons.I[start_idx:end_idx] += 20.0 # Strong current injection
-             
-    def _get_obs(self):
-        """
-        Returns normalized spike rates for observations.
-        """
-        current_t = self.network.t
-        window = 100*ms
-        
-        if len(self.spike_mon.t) > 0:
-            recent_spikes_idx = self.spike_mon.i[self.spike_mon.t > current_t - window]
-        else:
-            recent_spikes_idx = []
-        
-        obs_group_size = self.n_neurons // self.n_obs_groups
-        counts, _ = np.histogram(recent_spikes_idx, bins=self.n_obs_groups, range=(0, self.n_neurons))
-        
-        max_spikes = obs_group_size * 20 
-        obs = counts / max_spikes
-        obs = np.clip(obs, 0, 1) 
-        
-        return obs.astype(np.float32)
 
     def render(self):
         pass

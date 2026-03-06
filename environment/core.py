@@ -43,10 +43,13 @@ class OrganoidEnv(gym.Env):
         self.network = None # Will be initialized in reset()
         self.neurons = None
         self.synapses = []
-        self.pre_synapses = []
         self.monitors = {}
         
-        # Build the initial network structure (but don't start simulation yet)
+        # --- Virtual Motor System (New for Task 3) ---
+        self.cursor_pos = np.array([0.5, 0.5]) # Normalized [x, y]
+        self.output_neuron_start = 900 # Last 100 neurons are "motor" neurons
+        
+        # Build the initial network structure
         self._build_network()
 
     def _build_network(self):
@@ -158,6 +161,9 @@ class OrganoidEnv(gym.Env):
         # Run initialization
         self.network.run(10*ms)
         
+        # Reset motor state
+        self.cursor_pos = np.array([0.5, 0.5])
+        
         return self._get_obs(), {}
 
     def step(self, action):
@@ -178,18 +184,58 @@ class OrganoidEnv(gym.Env):
         # 5. Get Observation
         obs = self._get_obs()
         
-        # 6. Calculate Reward (Placeholder)
+        # 6. Calculate Reward (Placeholder - to be defined by task)
         reward = 0.0 
         
-        # 7. Apply Dopamine Learning
+        # 7. Update Motor Output (Move Cursor based on activity)
+        self._update_motor_output()
+        
+        # 8. Apply Dopamine Learning
         apply_dopamine(self.synapses, reward)
         
-        # 8. Check Done
+        # 9. Check Done
         terminated = False
         truncated = False
-        info = {}
+        info = {
+            'cursor_pos': self.cursor_pos.tolist(),
+            'total_spikes': len(self.spike_mon.t)
+        }
         
         return obs, reward, terminated, truncated, info
+
+    def _update_motor_output(self):
+        """
+        Translates activity in motor neurons (900-1000) into cursor movement.
+        Neurons 900-925: Up
+        Neurons 926-950: Down
+        Neurons 951-975: Left
+        Neurons 976-1000: Right
+        """
+        current_t = self.network.t
+        window = 100*ms
+        
+        # Filter spikes in motor window
+        if len(self.spike_mon.t) > 0:
+            motor_mask = (self.spike_mon.t > current_t - window) & (self.spike_mon.i >= self.output_neuron_start)
+            motor_indices = self.spike_mon.i[motor_mask]
+        else:
+            motor_indices = []
+            
+        # Count activity per quadrant
+        quad_size = (self.n_neurons - self.output_neuron_start) // 4
+        up = np.sum((motor_indices >= 900) & (motor_indices < 925))
+        down = np.sum((motor_indices >= 925) & (motor_indices < 950))
+        left = np.sum((motor_indices >= 950) & (motor_indices < 975))
+        right = np.sum((motor_indices >= 975) & (motor_indices < 1000))
+        
+        # Calculate velocity (normalized)
+        sensitivity = 0.01
+        dx = (right - left) * sensitivity
+        dy = (up - down) * sensitivity
+        
+        # Update and clip position
+        self.cursor_pos += np.array([dx, dy])
+        self.cursor_pos = np.clip(self.cursor_pos, 0, 1)
 
     def _apply_action(self, action):
         """

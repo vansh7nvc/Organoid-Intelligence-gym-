@@ -26,5 +26,6 @@ def apply_dopamine(synapses, reward, learning_rate=0.01):
             # Modifying state variables is efficient in Brian2.
             
             # w += lr * R * T
-            # We clamp weights to reasonable bounds if needed, but for now just update.
+            # We clip weights to prevent runaway excitation (0 to 100)
             S.w += learning_rate * reward * S.Trace
+            S.w = np.clip(S.w, 0, 100.0)

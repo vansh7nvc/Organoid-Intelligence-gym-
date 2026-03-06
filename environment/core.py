@@ -81,18 +81,20 @@ class OrganoidEnv(gym.Env):
 
         # 2. Synapses (Plasticity Enabled)
         # Model for plasticity: w is weight, Trace tracks eligibility
-        # Trace decays exponentially
+        # Weight Homeostasis: w decays back to baseline
         syn_eqs = '''
-        w : 1
+        dw/dt = (w0 - w) / tau_decay : 1
         dTrace/dt = -Trace / tau_trace : 1
+        w0 : 1 (shared)
         '''
         
         # E-E: Plastic
         # On spike, v_post increases by w, and Trace increases
         S_EE = Synapses(P_exc, P_exc, model=syn_eqs, on_pre='v_post += w; Trace += 1', 
                         method='euler',
-                        namespace={'tau_trace': self.tau_trace})
+                        namespace={'tau_trace': self.tau_trace, 'tau_decay': 10000*ms})
         S_EE.connect(p=0.1)
+        S_EE.w0 = 15.0 # Baseline
         S_EE.w = 15.0 # Initial weight
         S_EE.Trace = 0.0
         self.synapses.append(S_EE)
@@ -100,17 +102,19 @@ class OrganoidEnv(gym.Env):
         # E-I: Plastic
         S_EI = Synapses(P_exc, P_inh, model=syn_eqs, on_pre='v_post += w; Trace += 1',
                         method='euler',
-                        namespace={'tau_trace': self.tau_trace})
+                        namespace={'tau_trace': self.tau_trace, 'tau_decay': 10000*ms})
         S_EI.connect(p=0.1)
+        S_EI.w0 = 15.0
         S_EI.w = 15.0
         S_EI.Trace = 0.0
         self.synapses.append(S_EI)
         
-        # I-E: Inhibitory (subtracted w) - Also has traces if we want symmetric learning
+        # I-E: Inhibitory
         S_IE = Synapses(P_inh, P_exc, model=syn_eqs, on_pre='v_post -= w; Trace += 1',
                         method='euler',
-                        namespace={'tau_trace': self.tau_trace})
+                        namespace={'tau_trace': self.tau_trace, 'tau_decay': 10000*ms})
         S_IE.connect(p=0.1)
+        S_IE.w0 = 25.0
         S_IE.w = 25.0
         S_IE.Trace = 0.0
         self.synapses.append(S_IE)
@@ -118,8 +122,9 @@ class OrganoidEnv(gym.Env):
         # I-I: Inhibitory
         S_II = Synapses(P_inh, P_inh, model=syn_eqs, on_pre='v_post -= w; Trace += 1',
                         method='euler',
-                        namespace={'tau_trace': self.tau_trace})
+                        namespace={'tau_trace': self.tau_trace, 'tau_decay': 10000*ms})
         S_II.connect(p=0.1)
+        S_II.w0 = 25.0
         S_II.w = 25.0
         S_II.Trace = 0.0
         self.synapses.append(S_II)

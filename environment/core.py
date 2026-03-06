@@ -141,25 +141,23 @@ class OrganoidEnv(gym.Env):
         # 4. Monitors
         self.spike_mon = SpikeMonitor(self.neurons)
         self.monitors['spikes'] = self.spike_mon
+        
+        # 5. Initialize Network and Store State
+        self.network = Network(self.neurons, *self.synapses, self.bg_noise, self.spike_mon)
+        self.network.store('initial')
 
     def reset(self, seed=None, options=None):
         """Resets the environment to an initial state."""
         super().reset(seed=seed)
         
-        # Reset variables
+        # Restore simulation to stored initial state (t=0, v=-65, etc)
+        self.network.restore('initial')
+        
+        # Jitter initial voltage for diversity
         self.neurons.v = '-65 + 10*rand()' 
         self.neurons.u = 'b * v'
         self.neurons.E = 1.0
         self.neurons.I = 0
-        
-        # Reset Simulation Clock by moving to new Network instance
-        device.reinit()
-        device.activate()
-        
-        # Re-inject components into a new Network
-        # IMPORTANT: Unpack the synapses list
-        self.network = Network(self.neurons, *self.synapses, self.bg_noise, self.spike_mon)
-        self.network.store() 
         
         # Run initialization
         self.network.run(10*ms)
@@ -202,11 +200,13 @@ class OrganoidEnv(gym.Env):
         dist = np.linalg.norm(self.cursor_pos - self.target_pos)
         terminated = dist < 0.05 # Goal reached
         truncated = False
+        
         info = {
             'cursor_pos': self.cursor_pos.tolist(),
             'target_pos': self.target_pos.tolist(),
             'distance': float(dist),
-            'total_spikes': len(self.spike_mon.t)
+            'total_spikes': len(self.spike_mon.t),
+            'last_reward': reward
         }
         
         return obs, reward, terminated, truncated, info
@@ -214,16 +214,23 @@ class OrganoidEnv(gym.Env):
     def _calculate_reward(self):
         """
         Rewards the organoid for moving closer to the target.
+        Includes penalties for wall collisions and time steps.
         """
         dist = np.linalg.norm(self.cursor_pos - self.target_pos)
+        reward = -0.1 # Small penalty for every step (efficiency)
         
-        # Sparse or continuous reward
+        # Target Reward
         if dist < 0.1:
-            return 10.0 # High reward for being close
+            reward += 10.0 
         elif dist < 0.3:
-            return 1.0 # Moderate reward
-        
-        return 0.0 # No reward far away
+            reward += 1.0 
+            
+        # Wall Penalty
+        # If any coord is at the boundary (0 or 1)
+        if np.any(self.cursor_pos <= 0) or np.any(self.cursor_pos >= 1):
+            reward -= 5.0
+            
+        return reward
 
     def _get_obs(self):
         """

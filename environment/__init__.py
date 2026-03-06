@@ -1,0 +1,1 @@
+from .neurons import create_metabolic_neurons, get_metabolic_izhikevich_eqs

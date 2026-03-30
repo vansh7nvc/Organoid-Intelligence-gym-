@@ -1,0 +1,79 @@
+graph TD
+    classDef env fill:#e0f7fa,stroke:#006064,stroke-width:2px,color:#000;
+    classDef agent fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000;
+    classDef snn fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:#000;
+    classDef stabilize fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000;
+    classDef interface fill:#ffebee,stroke:#b71c1c,stroke-width:2px,color:#000;
+
+    subgraph Environment["📍 Grid World Environment"]
+        Direction["Target & Obstacles Context"]
+        Cursor["Agent Cursor Position"]
+        State["21D Observation Vector (s_t)"]
+        Reward["Reward / Penalty (r_t)"]
+    end
+    class Environment env
+
+    subgraph OuterAgent["🧠 Outer Control Agent (Dueling DDQN)"]
+        Replay["Prioritized Experience Replay (PER)"]
+        StateAction["Q*(s, a) Value Estimation"]
+        ActionSelect["Action Selection (0-3 or 0-7)"]
+    end
+    class OuterAgent agent
+
+    subgraph Interface["⚡ Sensory-Motor Translation"]
+        Encoder["State Exteroceptive Encoder"]
+        Injector["Direct Current Injection (I_stim = 30nA)"]
+        Decoder["Motor Spike Decoder (Spike Counting)"]
+    end
+    class Interface interface
+
+    subgraph Organoid["🕸️ The Organoid (Metabolic-Izhikevich SNN)"]
+        InputLayer["Input Layer\n(21 Neurons)"]
+        SDM["Sparse Distributed Memory Layer\n(256 Neurons, 10% Active)"]
+        Hidden["Integration Hidden Layer\n(144 Recurrent Neurons)"]
+        Motor["Clustered Motor Layer\n(100 Neurons / 4 Quadrants)"]
+    end
+    class Organoid snn
+
+    subgraph Stabilizers["⚖️ Biological Stabilizers"]
+        GodMode["God Mode (Seizure/Coma Suppression)"]
+        Homeostasis["Inhibitory Homeostasis (E/I Balance)"]
+        Plasticity["Structural Plasticity (Synaptic Pruning)"]
+    end
+    class Stabilizers stabilize
+
+    %% Environment to Agent
+    Direction --> State
+    Cursor --> State
+    State ===>|Observed State s_t| OuterAgent
+    Reward ===>|Reward r_t| Replay
+    StateAction --> Replay
+    Replay -.->|Sample mini-batch| StateAction
+    StateAction -->|Epsilon-Greedy| ActionSelect
+
+    %% Environment to SNN Interface
+    State -->|Current Spatial State| Encoder
+
+    %% Agent to SNN Interface (The Breakthrough)
+    ActionSelect ===>|Discrete Decision a_t| Injector
+
+    %% Interface to SNN
+    Encoder -->|Stimulate| InputLayer
+    Injector ===>|Current Injection to Specific Quadrant| Motor
+
+    %% Internal SNN Dynamics
+    InputLayer -->|10% Sparse Connectivity| SDM
+    SDM -->|Feedforward Synapses| Hidden
+    Hidden -->|High-Density Projection| Motor
+    Hidden -.->|Recurrent Self-Connections| Hidden
+
+    %% SNN to Interface to Environment
+    Motor ===>|Spike Rates per Quadrant| Decoder
+    Decoder ===>|Argmax Quadrant = Movement| Cursor
+    Cursor -->|Calculate next state| Reward
+
+    %% Stabilizers acting on SNN
+    GodMode -.->|Monitor Spikes & Clamp Voltages| Organoid
+    Homeostasis -.->|Modulate Inhibitory Weights| SDM
+    Homeostasis -.->|Modulate Inhibitory Weights| Hidden
+    Plasticity -.->|Prune Weak Synapses (w < 0.01)| Hidden

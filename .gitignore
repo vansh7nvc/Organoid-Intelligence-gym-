@@ -1,0 +1,13 @@
+.claude/
+.gemini/
+.opencode/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.env
+.venv
+venv/
+extracted.txt
+commit_all.py

@@ -1,0 +1,1 @@
+{"tag": "no_homeostasis_test", "episodes": 5, "goals_reached": 0, "rewards": [-753.9999999999995, -761.9999999999995, -801.9999999999995, -801.9999999999995, -780.9999999999995], "efficiency": [40, 40, 40, 40, 40], "duration": 156.30901074409485, "config": {"use_sdm": true, "use_morphology": true, "use_dual_trace": true, "use_homeostasis": false}}

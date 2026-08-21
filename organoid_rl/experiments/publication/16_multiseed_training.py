@@ -1,10 +1,20 @@
 import os
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
+import brian2 as b2
 import time
 import ray
 from ray import train, tune
 from ray.tune.search.basic_variant import BasicVariantGenerator
+
+# Attempt to configure GPU backend if GeNN is available
+try:
+    import brian2genn
+    b2.prefs.codegen.target = 'genn'
+    print("Brian2 target set to: genn")
+except ImportError:
+    print("Brian2 target set to default (GeNN not found)")
 
 # Ensure parent directory is in path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
@@ -114,7 +124,7 @@ def train_organoid_seed(config):
         avg_loss = float(np.mean(loss_history)) if loss_history else 0.0
         
         # Report metrics to Ray Tune
-        train.report({
+        tune.report({
             "episode": ep,
             "reward": total_reward,
             "success": success,

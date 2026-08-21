@@ -24,4 +24,4 @@ COPY . .
 RUN pip install --no-cache-dir -e .
 
 # Default: run Month 6 Grand Unification training
-CMD ["python", "experiments/month4_6_advanced/12_month6_training.py"]
+CMD ["python", "experiments/12_month6_training.py"]

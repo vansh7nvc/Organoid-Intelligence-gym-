@@ -142,7 +142,8 @@ if __name__ == "__main__":
         tune_config=tune.TuneConfig(
             metric="reward",
             mode="max",
-            num_samples=1 # since grid_search does the 5 samples
+            num_samples=1, # since grid_search does the 5 samples
+            max_concurrent_trials=1 # Prevents GeNN C++ compile collisions and GPU OOM
         ),
         run_config=tune.RunConfig(
             name="organoid_multiseed",

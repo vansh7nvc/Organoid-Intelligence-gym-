@@ -73,41 +73,39 @@ docker run organoid-rl
 
 ```bash
 # Verify Brian2 works
-python tests/sanity_check.py
+python sanity_check.py
 
 # Watch the organoid navigate (80 steps)
-python tests/diagnostic_cursor.py
+python ../diagnostic_cursor.py
 ```
 
 ### Training
 
 ```bash
 # Month 3: Basic cursor navigation (Q-Learning)
-python experiments/month3_navigation/07_month3_training.py
+python experiments/07_month3_training.py
 
 # Month 4: SDM + Obstacles + Ablation study
-python experiments/month4_6_advanced/09_month4_training.py
-python experiments/month4_6_advanced/10_month4_ablation_study.py
+python experiments/09_month4_training.py
+python experiments/10_month4_ablation_study.py
 
 # Month 5: Multi-goal navigation with context switching
-python experiments/month4_6_advanced/11_month5_multigoal_training.py
+python experiments/11_month5_multigoal_training.py
 
 # Month 6: Grand Unification (Dueling DDQN + Curriculum + HER)
-python experiments/month4_6_advanced/12_month6_training.py
+python experiments/12_month6_training.py
 ```
 
 ## 📊 Results Summary
 
-| Phase | Agent | Key Milestone | Episodes | Status |
-|:--|:--|:--|--:|:---|
-| Month 1 | — | Stable 500-neuron spiking network (5-10 Hz) | — | ✅ Done |
-| Month 2 | Random | Pavlov conditioning: Bell → Saliva pathway | 50 | ✅ Done |
-| Month 3 | Q-Table | First cursor-to-goal navigation | 150 | ✅ Done |
-| Month 4 | Q-Table | SDM + Obstacles + Ablation proof | 100 | ✅ Done |
-| Month 5 | Q-Table | Multi-goal with context switching | 250 | ✅ Done |
-| Month 6 | **Dueling DDQN** | **Grand Unification: 70.8% Success Rate** | **500** | 🚀 **Winner** |
-
-> **Note**: The final Month 6 success was driven by a "Motor Mapping Breakthrough" (direct quadrant stimulation), achieving **97% accuracy** on Stage 2 (Obstacle Navigation).
+| Phase | Agent | Key Milestone | Episodes |
+|:--|:--|:--|--:|
+| Month 1 | — | Stable 500-neuron spiking network (5-10 Hz) | — |
+| Month 2 | Random | Pavlov conditioning: Bell → Saliva pathway | 50 |
+| Month 3 | Q-Table | First cursor-to-goal navigation | 150 |
+| Month 4 | Q-Table | SDM + Obstacles + Ablation proof | 100 |
+| Month 5 | Q-Table | Multi-goal with context switching | 250 |
+| Month 6 | Dueling DDQN | Curriculum stage 1-4, HER, structural plasticity | 500 |
 
 ## 📁 Project Structure
 
@@ -121,14 +119,13 @@ organoid-rl/
 ├── agents/
 │   └── dqn_agent.py     # Dueling Double DQN + PER + HER
 ├── experiments/
-│   ├── month1_2_basics/ # Foundation tests
-│   ├── month3_navigation/ # Cursor navigation training
-│   ├── month4_6_advanced/ # SDM, obstacles, multi-goal, grand unification
-│   └── publication/     # Publication figure generator
-├── tests/               # Diagnostics and sanity checks
-├── docs/                # Project roadmap and architecture planning
+│   ├── 01-06_*          # Foundation tests (Month 1)
+│   ├── 07_month3_*      # Cursor navigation training
+│   ├── 08-10_month4_*   # SDM, obstacles, ablation
+│   ├── 11_month5_*      # Multi-goal training
+│   ├── 12_month6_*      # Grand Unification training
+│   └── 13_generate_*    # Publication figure generator
 ├── reports/             # Monthly progress reports
-├── paper/               # Publication draft and outline
 ├── setup.py
 ├── requirements.txt
 ├── Dockerfile

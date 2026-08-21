@@ -20,22 +20,27 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 # --- Configuration ---
-# Results live in organoid_rl/experiments/results/, which is one level up from this script (in publication/)
-RESULTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results"))
-    
+# Results may live in organoid_rl/experiments/results/ or in the
+# project-root experiments/results/ directory.
+_local_results = os.path.join(os.path.dirname(__file__), "results")
+_root_results = os.path.join(os.path.dirname(__file__), "..", "..", "experiments", "results")
+RESULTS_DIR = _local_results if os.path.isdir(_local_results) and os.listdir(_local_results) else os.path.abspath(_root_results)
+# Prefer whichever directory actually contains JSON files
+if not any(f.endswith('.json') for f in os.listdir(RESULTS_DIR) if os.path.isfile(os.path.join(RESULTS_DIR, f))):
+    alt = _root_results if RESULTS_DIR == _local_results else _local_results
+    if os.path.isdir(alt):
+        RESULTS_DIR = os.path.abspath(alt)
 
 OUTPUT_DIR = os.path.join(RESULTS_DIR, "paper_figures")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Publication style (LaTeX compatibility)
+# Publication style
 plt.rcParams.update({
     'font.family': 'serif',
-    'mathtext.fontset': 'cm',  # Computer Modern for math
-    'axes.formatter.use_mathtext': True,
     'font.size': 11,
     'axes.labelsize': 12,
     'axes.titlesize': 13,
-    'legend.fontsize': 10,
+    'legend.fontsize': 9,
     'xtick.labelsize': 10,
     'ytick.labelsize': 10,
     'figure.dpi': 300,
@@ -43,17 +48,7 @@ plt.rcParams.update({
     'savefig.bbox': 'tight',
     'axes.grid': True,
     'grid.alpha': 0.3,
-    'pdf.fonttype': 42,  # TrueType for PDF editors
-    'ps.fonttype': 42,
 })
-
-def save_fig(fig, base_name):
-    """Helper to save figures as both PNG and PDF for LaTeX."""
-    png_path = os.path.join(OUTPUT_DIR, f"{base_name}.png")
-    pdf_path = os.path.join(OUTPUT_DIR, f"{base_name}.pdf")
-    fig.savefig(png_path)
-    fig.savefig(pdf_path)
-    print(f"  Saved: {png_path} and .pdf")
 
 def load_json(filename):
     """Safely load a JSON results file."""
@@ -75,7 +70,7 @@ def figure1_learning_progression():
     datasets = {
         'Month 4 (Full Arch.)': load_json('results_full.json'),
         'Month 5 (Multi-Goal)': load_json('results_month5_multigoal.json'),
-        'Month 6 (Grand Unif.)': load_json('results_month6_final.json'),
+        'Month 6 (Grand Unif.)': load_json('results_month6_grand.json'),
     }
     
     fig, ax = plt.subplots(figsize=(8, 4.5))
@@ -98,8 +93,10 @@ def figure1_learning_progression():
     ax.set_title('Learning Progression: Month 4 → Month 6')
     ax.legend(loc='upper left', framealpha=0.9)
     
-    save_fig(fig, 'fig1_learning_progression')
+    path = os.path.join(OUTPUT_DIR, 'fig1_learning_progression.png')
+    fig.savefig(path)
     plt.close(fig)
+    print(f"  Saved: {path}")
 
 
 def figure2_ablation_comparison():
@@ -157,8 +154,10 @@ def figure2_ablation_comparison():
     fig.suptitle('Ablation Study: Component Contribution (Month 4)', fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
     
-    save_fig(fig, 'fig2_ablation_study')
+    path = os.path.join(OUTPUT_DIR, 'fig2_ablation_study.png')
+    fig.savefig(path)
     plt.close(fig)
+    print(f"  Saved: {path}")
 
 
 def figure3_month6_dashboard():
@@ -167,9 +166,10 @@ def figure3_month6_dashboard():
     """
     print("[Fig 3] Month 6 Dashboard...")
     
-    data = load_json('results_month6_final.json')
+    data = load_json('results_month6_grand.json')
     if data is None:
-        data = load_json('results_month6_grand.json')
+        # Try v2
+        data = load_json('results_month6_grand_v2.json')
     if data is None:
         print("  [SKIP] No Month 6 results found")
         return
@@ -226,211 +226,65 @@ def figure3_month6_dashboard():
     fig.suptitle('Month 6: Grand Unification Results', fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
     
-    save_fig(fig, 'fig3_month6_dashboard')
+    path = os.path.join(OUTPUT_DIR, 'fig3_month6_dashboard.png')
+    fig.savefig(path)
     plt.close(fig)
+    print(f"  Saved: {path}")
 
 
 def figure4_architecture_schematic():
     """
-    Figure 4: Publication-quality Neural Topology Architecture schematic.
+    Figure 4: Architecture schematic as a text-based diagram.
     """
     print("[Fig 4] Architecture Schematic...")
     
-    fig, ax = plt.subplots(figsize=(12, 8))
-    ax.set_xlim(-5, 105)
-    ax.set_ylim(-10, 95)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 7)
     ax.axis('off')
+    ax.set_title('OrganoidEnv Architecture', fontsize=15, fontweight='bold', pad=20)
     
-    from matplotlib.patches import FancyBboxPatch, FancyArrowPatch, Rectangle
-    from matplotlib.collections import LineCollection
-    import matplotlib.patheffects as pe
-
-    # ==========================
-    # 1. DRAW SNN NEURAL TOPOLOGY
-    # ==========================
-    def draw_layer_nodes(cx, cy, width, height, num_nodes, color, seed=42):
-        np.random.seed(seed)
-        xs = cx - width/2 + np.random.rand(num_nodes) * width
-        ys = cy - height/2 + np.random.rand(num_nodes) * height
-        
-        # Plot glowing nodes
-        ax.scatter(xs, ys, s=40, c=color, edgecolors='white', linewidths=0.5, alpha=0.9, zorder=4)
-        ax.scatter(xs, ys, s=120, c=color, alpha=0.15, zorder=3)
-        return xs, ys
-
-    def draw_synapses(xs1, ys1, xs2, ys2, sparsity, color, alpha=0.1):
-        lines = []
-        np.random.seed(42)
-        n1, n2 = len(xs1), len(xs2)
-        # Cap max lines to prevent massive PDF sizes, but keep it looking dense
-        max_lines = 800
-        current_lines = 0
-        for i in range(n1):
-            for j in range(n2):
-                if np.random.rand() < sparsity and current_lines < max_lines:
-                    lines.append([(xs1[i], ys1[i]), (xs2[j], ys2[j])])
-                    current_lines += 1
-        lc = LineCollection(lines, colors=color, linewidths=0.4, alpha=alpha, zorder=2)
-        ax.add_collection(lc)
-
-    # Base Coordinates for Neural Layers
-    input_cx, input_cy = 15, 60
-    sdm_cx, sdm_cy = 40, 60
-    hidden_cx, hidden_cy = 65, 60
-    motor_cx, motor_cy = 90, 60
-
-    # Draw Nodes
-    in_xs, in_ys = draw_layer_nodes(input_cx, input_cy, 4, 30, 21, '#9b59b6')
-    sdm_xs, sdm_ys = draw_layer_nodes(sdm_cx, sdm_cy, 10, 40, 200, '#3498db')  # Display 200 out of 256 for visual clarity
-    hid_xs, hid_ys = draw_layer_nodes(hidden_cx, hidden_cy, 8, 35, 144, '#2ecc71')
+    # Boxes
+    boxes = [
+        (1.0, 4.5, 2.0, 1.5, '#3498db', 'SDM Layer\n256 neurons\n(10% sparse)', 'white'),
+        (4.0, 4.5, 2.0, 1.5, '#2ecc71', 'Hidden Layer\n144 neurons\n(integration)', 'white'),
+        (7.0, 4.5, 2.0, 1.5, '#e74c3c', 'Motor Layer\n100 neurons\n(clustered)', 'white'),
+        (1.0, 1.5, 2.0, 1.2, '#f39c12', 'Observation\n21D Input', 'white'),
+        (4.0, 1.5, 2.0, 1.2, '#9b59b6', 'RL Agent\nDDQN + PER', 'white'),
+        (7.0, 1.5, 2.0, 1.2, '#1abc9c', 'Cursor\nMovement', 'white'),
+    ]
     
-    # Motor layer as 4 distinct spatial clusters (Up, Down, Left, Right)
-    m_xs, m_ys = [], []
-    for quad_cx, quad_cy in [(87, 72), (93, 72), (87, 48), (93, 48)]:
-        qx, qy = draw_layer_nodes(quad_cx, quad_cy, 3, 10, 25, '#e74c3c')
-        m_xs.extend(qx)
-        m_ys.extend(qy)
-
-    # Draw Synaptic Web (Projections)
-    draw_synapses(in_xs, in_ys, sdm_xs, sdm_ys, 0.08, '#7f8c8d', 0.2)
-    draw_synapses(sdm_xs, sdm_ys, hid_xs, hid_ys, 0.05, '#7f8c8d', 0.15)
-    draw_synapses(hid_xs, hid_ys, m_xs, m_ys, 0.06, '#7f8c8d', 0.15)
+    for x, y, w, h, color, text, tc in boxes:
+        rect = plt.Rectangle((x, y), w, h, facecolor=color, edgecolor='white',
+                              linewidth=2, alpha=0.85, zorder=2)
+        ax.add_patch(rect)
+        ax.text(x + w / 2, y + h / 2, text, ha='center', va='center',
+                fontsize=9, fontweight='bold', color=tc, zorder=3)
     
-    # Internal recurrent hidden synapses
-    draw_synapses(hid_xs, hid_ys, hid_xs, hid_ys, 0.02, '#2ecc71', 0.1)
-
-    # Layer Text Annotations
-    def add_layer_label(x, y, title, subtitle):
-        bbox = dict(facecolor='white', edgecolor='none', alpha=0.85, pad=1)
-        ax.text(x, y, title, ha='center', va='center', fontsize=11, fontweight='bold', color='#2c3e50', bbox=bbox, zorder=5)
-        ax.text(x, y - 3, subtitle, ha='center', va='center', fontsize=9, color='#7f8c8d', bbox=bbox, zorder=5)
-
-    add_layer_label(input_cx, 85, 'Input Layer', '(21 Sensors)')
-    add_layer_label(sdm_cx, 85, 'SDM Layer', '(256 Sparse Neurons)')
-    add_layer_label(hidden_cx, 85, 'Hidden Layer', '(144 Recurrent Neurons)')
-    add_layer_label(motor_cx, 85, 'Motor Layer', '($4 \\times 25$ Clustered Neurons)')
-
-    # Organoid Bounding Box
-    organoid_box = FancyBboxPatch((5, 38), 90, 52, boxstyle='round,pad=1,rounding_size=2', 
-                                  edgecolor='#bdc3c7', facecolor='#fbfcfc', lw=2, linestyle='--', zorder=0)
-    ax.add_patch(organoid_box)
-    ax.text(50, 92, 'The Organoid ($\mathit{in\ silico}$ Metabolic-Izhikevich Spiking Neural Network)', 
-            ha='center', va='center', fontsize=13, fontweight='bold', color='#34495e', zorder=5)
-
-    # ==========================
-    # 2. DRAW OUTER RL AGENT & ENV
-    # ==========================
-    # RL Agent Box
-    rl_box = FancyBboxPatch((30, -5), 40, 20, boxstyle='round,pad=0.5,rounding_size=2', 
-                            edgecolor='#8e44ad', facecolor='#f8f4f9', lw=2, zorder=2)
-    rl_box.set_path_effects([pe.withSimplePatchShadow(offset=(2, -2), shadow_rgbFace='gray', alpha=0.3), pe.Normal()])
-    ax.add_patch(rl_box)
+    # Arrows (neural pathway)
+    for x1, x2, y in [(3.0, 4.0, 5.25), (6.0, 7.0, 5.25)]:
+        ax.annotate('', xy=(x2, y), xytext=(x1, y),
+                    arrowprops=dict(arrowstyle='->', color='#2c3e50', lw=2.5))
     
-    ax.text(50, 10, 'Automated Experimentalist (Outer Agent)', ha='center', va='center', fontsize=12, fontweight='bold', color='#8e44ad', zorder=5)
-    ax.text(50, 5, 'Dueling Double DQN + Prioritized Exp. Replay', ha='center', va='center', fontsize=10, color='#2c3e50', zorder=5)
-    ax.text(50, -1, '$Q^*(s_t, a_t) = V(s_t) + \\left(A(s_t, a_t) - \\frac{1}{|\\mathcal{A}|}\\sum A(s_t, a)\\right)$', 
-            ha='center', va='center', fontsize=10, color='#2c3e50', zorder=5)
-
-    # Biological Stabilizers Block (Bridging Agent and SNN)
-    stab_box = FancyBboxPatch((15, 23), 70, 8, boxstyle='round,pad=0.2,rounding_size=1', 
-                              edgecolor='#d35400', facecolor='#fef5e7', lw=1.5, zorder=2)
-    ax.add_patch(stab_box)
-    ax.text(50, 27, 'Biological Stabilizers', ha='center', va='center', fontsize=11, fontweight='bold', color='#d35400', zorder=5)
-    ax.text(50, 24, 'Global Activity Regulator (Homeostatic Reset) \& Inhibitory Homeostasis \& Structural Plasticity', 
-            ha='center', va='center', fontsize=9, color='#e67e22', zorder=5)
-
-    # ==========================
-    # 3. CONTROL FLOW ARROWS
-    # ==========================
-    def add_curve_arrow(start, end, rad, label, color, label_pos, text_offset=(0,0)):
-        arrow = FancyArrowPatch(start, end, arrowstyle='-|>', color=color, lw=2.5, 
-                                connectionstyle=f'arc3,rad={rad}', zorder=1, mutation_scale=20)
-        ax.add_patch(arrow)
-        bbox = dict(facecolor='white', edgecolor='none', alpha=0.9, pad=2)
-        ax.text(label_pos[0]+text_offset[0], label_pos[1]+text_offset[1], label, 
-                ha='center', va='center', fontsize=10, fontweight='bold', color=color, bbox=bbox, zorder=6)
-
-    # Environment -> Agent (State/Reward)
-    add_curve_arrow((10, 40), (28, 5), rad=-0.3, label='State $s_t$\nReward $r_t$', color='#2980b9', label_pos=(13, 22))
+    # Arrows (agent loop)
+    ax.annotate('', xy=(1.0, 4.5), xytext=(2.0, 2.7),  # Obs -> SDM
+                arrowprops=dict(arrowstyle='->', color='#7f8c8d', lw=1.5, ls='--'))
+    ax.annotate('', xy=(4.0, 1.5), xytext=(4.0, 4.5),  # Agent -> actions
+                arrowprops=dict(arrowstyle='->', color='#7f8c8d', lw=1.5, ls='--'))
+    ax.annotate('', xy=(7.0, 2.7), xytext=(9.0, 4.5),  # Motor -> Cursor
+                arrowprops=dict(arrowstyle='->', color='#7f8c8d', lw=1.5, ls='--'))
     
-    # Agent -> Motor Injection (Action)
-    add_curve_arrow((70, 5), (92, 43), rad=0.3, label='Motor Quadrant\nInjection $I_{stim}$', color='#c0392b', label_pos=(91, 23))
+    # Labels
+    ax.text(5.0, 6.5, 'Spiking Neural Network (Brian2)', ha='center',
+            fontsize=12, fontstyle='italic', color='#2c3e50')
+    ax.text(5.0, 0.5, 'Agent-Environment Loop', ha='center',
+            fontsize=12, fontstyle='italic', color='#7f8c8d')
     
-    # Environment -> Sensory Input
-    add_curve_arrow((10, 50), (13, 60), rad=0.2, label='Exteroceptive Sensor Map', color='#16a085', label_pos=(-1, 55))
-    
-    # Motor -> Environment (Cursor Step)
-    add_curve_arrow((90, 78), (10, 70), rad=-0.2, label='Spike Decoding $\\rightarrow$ Action execution (Cursor Steps)', color='#8e44ad', label_pos=(50, 81))
-
-    fig.tight_layout()
-    save_fig(fig, 'fig4_architecture')
+    path = os.path.join(OUTPUT_DIR, 'fig4_architecture.png')
+    fig.savefig(path)
     plt.close(fig)
+    print(f"  Saved: {path}")
 
-
-def figure5_baseline_comparison():
-    """
-    Figure 5: Statistical Comparison against Baselines.
-    Success rate vs Training Episodes.
-    """
-    print("[Fig 5] Baseline Comparison...")
-    data = load_json('comprehensive_eval.json')
-    if not data: return
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-    
-    # Group OrganoidRL seeds
-    snn_seeds = [data[k]['success_rates'] for k in data if 'OrganoidRL_Seed' in k]
-    if snn_seeds:
-        snn_mean = np.mean(snn_seeds, axis=0)
-        snn_std = np.std(snn_seeds, axis=0)
-        ax.plot(snn_mean, label='OrganoidRL (Mean ± Std)', color='teal', linewidth=2.5)
-        ax.fill_between(range(len(snn_mean)), snn_mean - snn_std, snn_mean + snn_std, color='teal', alpha=0.2)
-
-    # Plot other baselines
-    colors = {'ANN_Baseline': 'crimson', 'RL-only_Baseline': 'orange', 'SimpleSNN_Baseline': 'gray'}
-    for label, color in colors.items():
-        if label in data:
-            ax.plot(data[label]['success_rates'], label=label.replace('_', ' '), color=color, linestyle='--')
-
-    ax.set_xlabel('Episode')
-    ax.set_ylabel('Success Rate')
-    ax.set_title('Baseline Comparison: Statistical Validation')
-    ax.legend()
-    save_fig(fig, 'fig5_baseline_comparison')
-    plt.close(fig)
-
-def figure6_network_activity():
-    """
-    Figure 6: Network Activity (Spike Raster & Motor Activation).
-    Dummy simulation if no real data to demonstrate plot.
-    """
-    print("[Fig 6] Network Activity...")
-    fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-    
-    # Panel A: Spike Raster (Synthetic for Demo)
-    ax = axes[0]
-    np.random.seed(42)
-    for i in range(100):
-        spikes = np.random.uniform(0, 1000, size=np.random.randint(5, 50))
-        ax.scatter(spikes, [i] * len(spikes), s=2, color='black', alpha=0.6)
-    ax.set_ylabel('Neuron ID')
-    ax.set_title('(A) Spike Raster Plot')
-    
-    # Panel B: Motor Activation
-    ax = axes[1]
-    t = np.linspace(0, 1000, 1000)
-    up = np.sin(t/100)*10 + 10 + np.random.randn(1000)
-    down = np.cos(t/100)*5 + 5 + np.random.randn(1000)
-    ax.plot(t, up, label='Motor Up', color='red')
-    ax.plot(t, down, label='Motor Down', color='blue')
-    ax.set_xlabel('Time (ms)')
-    ax.set_ylabel('Firing Rate (Hz)')
-    ax.set_title('(B) Motor Neuron Activation Patterns')
-    ax.legend()
-
-    plt.tight_layout()
-    save_fig(fig, 'fig6_network_activity')
-    plt.close(fig)
 
 if __name__ == '__main__':
     print("=" * 50)
@@ -441,8 +295,6 @@ if __name__ == '__main__':
     figure2_ablation_comparison()
     figure3_month6_dashboard()
     figure4_architecture_schematic()
-    figure5_baseline_comparison()
-    figure6_network_activity()
     
     print(f"\nAll figures saved to: {OUTPUT_DIR}")
     print("=" * 50)

@@ -16,9 +16,12 @@ from .neurons import create_metabolic_neurons, get_metabolic_izhikevich_eqs
 from .stimulator import stabilize_network_activity
 from .rewards import apply_dopamine
 
-# High-performance Cython configuration
-prefs.codegen.target = 'numpy'
-# Let Brian2 auto-detect the compiler (usually MSVC on Windows if installed)
+# High-performance Cython configuration: use fast Cython/GCC on Linux (Colab), fallback to numpy on Windows
+import platform
+if platform.system() == "Linux":
+    prefs.codegen.target = 'cython'
+else:
+    prefs.codegen.target = 'numpy'
 
 class OrganoidEnv(gym.Env):
     """

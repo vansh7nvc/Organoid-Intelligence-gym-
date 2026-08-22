@@ -11,8 +11,7 @@ License: MIT
 
 from brian2 import *
 
-# Use Cython for high-performance compilation (matches core.py)
-prefs.codegen.target = 'cython'
+# codegen target is set in core.py (numpy)
 
 def get_metabolic_izhikevich_eqs():
     """

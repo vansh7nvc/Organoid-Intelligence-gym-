@@ -16,7 +16,7 @@ from .neurons import create_metabolic_neurons, get_metabolic_izhikevich_eqs
 from .stimulator import stabilize_network_activity
 from .rewards import apply_dopamine
 
-# High-performance Cython configuration
+#prefs.codegen.target = 'cython'
 prefs.codegen.target = 'numpy'
 # Let Brian2 auto-detect the compiler (usually MSVC on Windows if installed)
 
@@ -27,7 +27,7 @@ class OrganoidEnv(gym.Env):
     """
     metadata = {'render_modes': ['human']}
 
-    def __init__(self, use_sdm=True, use_morphology=True, use_dual_trace=True, use_stabilizer=True):
+    def __init__(self, use_sdm=True, use_morphology=True, use_dual_trace=True, use_stabilizer=True, use_motor_mapping=True):
         super(OrganoidEnv, self).__init__()
         
         # --- StudySlate / Ablation Flags ---
@@ -35,6 +35,7 @@ class OrganoidEnv(gym.Env):
         self.use_morphology = use_morphology
         self.use_dual_trace = use_dual_trace
         self.use_stabilizer = use_stabilizer
+        self.use_motor_mapping = use_motor_mapping
         
         # --- Environment Configuration ---
         self.dt = 0.1 * ms  # Faster timestep (Phase 5 Optimization)
@@ -159,7 +160,8 @@ class OrganoidEnv(gym.Env):
             op = on_pre_minus if is_inhibitory else on_pre_plus
             S = Synapses(pre, post, model=syn_eqs, on_pre=op, method='euler', namespace=ns)
             S.connect(p=p)
-            S.w = w; S.w0 = w
+            S.w = w
+            S.w0 = w
             if self.use_dual_trace:
                 S.Trace1 = 0.0; S.Trace2 = 0.0
             else:
@@ -257,7 +259,7 @@ class OrganoidEnv(gym.Env):
         # 1. Reset Current
         self.neurons.I = 0
         
-        # Stabilization (GAR)
+        # 2. Global Activity Regulator (Stabilizer)
         if self.use_stabilizer:
             stabilize_network_activity(self)
         
@@ -299,8 +301,7 @@ class OrganoidEnv(gym.Env):
             'target_pos': self.target_pos.tolist(),
             'distance': float(dist),
             'total_spikes': len(self.spike_mon.t),
-            'last_reward': reward,
-            'success': terminated
+            'last_reward': reward
         }
         
         return obs, reward, terminated, truncated, info
@@ -474,9 +475,14 @@ class OrganoidEnv(gym.Env):
     def _apply_action(self, action):
         """
         Maps action ID (0-7) to directional motor neuron stimulation.
-        Actions 0-3: Cardinal directions (Up, Down, Left, Right)
-        Actions 4-7: Diagonal combinations
         """
+        if not self.use_motor_mapping:
+            # Ablation: Diffuse Stimulation
+            np.random.seed(action + int(self.network.t/ms))
+            diffuse_indices = np.random.choice(np.arange(self.n_neurons), size=25, replace=False)
+            self.neurons.I[diffuse_indices] += 25.0
+            return
+
         stim = 25.0
         if action == 0:    # Up
             self.neurons.I[self.motor_up[0]:self.motor_up[1]] += stim

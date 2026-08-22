@@ -16,7 +16,7 @@ setup(
     },
     packages=find_packages(),
     install_requires=[
-        "brian2>=2.5.1",
+        "brian2>=2.8.0",
         "gymnasium>=0.29.0",
         "numpy>=1.24.0",
         "matplotlib>=3.7.0",

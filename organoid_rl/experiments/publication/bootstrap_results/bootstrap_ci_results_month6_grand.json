@@ -1,0 +1,23 @@
+{
+  "source_file": "results_month6_grand.json",
+  "n_episodes": 51,
+  "success_threshold": 30.0,
+  "n_bootstrap": 10000,
+  "confidence_level": 0.95,
+  "overall": {
+    "mean": 0.0,
+    "ci_low": 0.0,
+    "ci_high": 0.0,
+    "n_success": 0,
+    "n_total": 51
+  },
+  "per_stage": {
+    "Stage 1 (Basic)": {
+      "mean": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "n": 51,
+      "partial": true
+    }
+  }
+}

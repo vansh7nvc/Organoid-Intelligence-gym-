@@ -1,0 +1,43 @@
+{
+  "ann": {
+    "layers": {
+      "Feature Layer 1 (21->256)": 5376,
+      "Feature Layer 2 (256->128)": 32768,
+      "Value Stream 1 (128->64)": 8192,
+      "Value Stream 2 (64->1)": 64,
+      "Advantage Stream 1 (128->64)": 8192,
+      "Advantage Stream 2 (64->8)": 512
+    },
+    "total_macs": 55104,
+    "total_with_bias": 55625,
+    "noisy_overhead": 16960,
+    "total_with_noisy": 72585
+  },
+  "snn": {
+    "avg_firing_rate_hz": 8.5,
+    "n_neurons": 500,
+    "step_duration_ms": 50,
+    "total_spikes_per_step": 212.5,
+    "avg_fanout": 29.5,
+    "synaptic_events_per_step": 6259.0,
+    "ops_per_synaptic_event": 2,
+    "total_ops_per_step": 12517.0
+  },
+  "comparison": {
+    "ann": {
+      "total_macs": 72585,
+      "energy_gpu_pj": 65326.5,
+      "energy_gpu_nj": 65.33
+    },
+    "snn": {
+      "total_spikes": 212.5,
+      "synaptic_events": 6259.0,
+      "energy_loihi_pj": 143957.0,
+      "energy_loihi_nj": 143.96,
+      "energy_ideal_pj": 6259.0,
+      "energy_ideal_nj": 6.26
+    },
+    "ratio_gpu_vs_loihi": 0.5,
+    "ratio_gpu_vs_ideal": 10.4
+  }
+}

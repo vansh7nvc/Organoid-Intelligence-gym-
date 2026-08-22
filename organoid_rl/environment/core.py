@@ -136,9 +136,9 @@ class OrganoidEnv(gym.Env):
         # 2. Synapses (Ablation Capable)
         if self.use_dual_trace:
             syn_eqs = '''
-            dw/dt = (w0 - w) / tau_decay : 1
-            dTrace1/dt = -Trace1 / tau_trace1 : 1
-            dTrace2/dt = -Trace2 / tau_trace2 : 1
+            dw/dt = (w0 - w) / tau_decay : 1 (clock-driven)
+            dTrace1/dt = -Trace1 / tau_trace1 : 1 (clock-driven)
+            dTrace2/dt = -Trace2 / tau_trace2 : 1 (clock-driven)
             w0 : 1 (shared)
             '''
             on_pre_plus = 'v_post += w; Trace1 += 1; Trace2 += 1'
@@ -146,8 +146,8 @@ class OrganoidEnv(gym.Env):
             ns = {'tau_trace1': 100*ms, 'tau_trace2': 2500*ms, 'tau_decay': 10000*ms}
         else:
             syn_eqs = '''
-            dw/dt = (w0 - w) / tau_decay : 1
-            dTrace/dt = -Trace / tau_trace : 1
+            dw/dt = (w0 - w) / tau_decay : 1 (clock-driven)
+            dTrace/dt = -Trace / tau_trace : 1 (clock-driven)
             w0 : 1 (shared)
             '''
             on_pre_plus = 'v_post += w; Trace += 1'

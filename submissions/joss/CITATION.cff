@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Sharma"
+  given-names: "Vansh"
+  orcid: "https://orcid.org/0000-0000-0000-0000"
+- family-names: "Malik"
+  given-names: "Seema"
+title: "OrganoidEnv"
+version: 1.0.0
+date-released: 2026-08-21
+url: "https://github.com/vansh7nvc/OrganoidEnv"
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Sharma"
+    given-names: "Vansh"
+  - family-names: "Malik"
+    given-names: "Seema"
+  title: "OrganoidEnv: A Neuromorphic Testbed for Reinforcement Learning with Biologically Constrained Spiking Neural Networks"
+  journal: "Journal of Open Source Software"
+  year: 2026

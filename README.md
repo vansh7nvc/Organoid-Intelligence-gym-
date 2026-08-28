@@ -4,12 +4,14 @@
     <strong>A Stabilized Gymnasium Testbed for Training Biologically Constrained Spiking Neural Networks via Reinforcement Learning</strong>
   </p>
   <p align="center">
+    <a href="https://github.com/vansh7nvc/Organoid-Intelligence-gym-/actions/workflows/ci.yml"><img src="https://github.com/vansh7nvc/Organoid-Intelligence-gym-/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
     <a href="https://colab.research.google.com/github/vansh7nvc/Organoid-Intelligence-gym-/blob/main/notebooks/colab_gpu_training.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
     <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white" alt="Python"></a>
     <a href="https://brian2.readthedocs.io/"><img src="https://img.shields.io/badge/Brian2-v2.8%2B-FF6F00" alt="Brian2"></a>
     <a href="https://gymnasium.farama.org/"><img src="https://img.shields.io/badge/Gymnasium-v0.29%2B-008080" alt="Gymnasium"></a>
     <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-v2.0%2B-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch"></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+    <a href="https://joss.theoj.org"><img src="https://img.shields.io/badge/JOSS-Submitted-blue" alt="JOSS Submission"></a>
   </p>
 </p>
 
@@ -105,41 +107,85 @@ OrganoidEnv was benchmarked across **$N=3$ independent biological initialization
 
 ---
 
-## 📂 Repository & Submission Structure
+## 📂 Repository Structure
 
 ```
-Organoid Intelligence/
-├── submissions/
-│   ├── frontiers_in_neuroinformatics/       # Primary Journal Submission
-│   │   ├── organoidenv_manuscript.tex       # Full LaTeX source (IEEE / Frontiers ready)
-│   │   ├── response_to_reviewers.md         # Comprehensive rebuttal & review notes
-│   │   └── figures/                         # Standalone vector PDF & 300 DPI PNG figures
-│   │       ├── fig1_multiseed_progression.pdf
-│   │       ├── fig2_ablation_comparison.pdf
-│   │       └── ...
-│   │
-│   └── joss/                                # Journal of Open Source Software
-│       ├── paper.md                         # JOSS submission manuscript
-│       ├── paper.bib                        # Complete BibTeX bibliography
-│       └── CITATION.cff                     # Citation metadata
+Organoid-Intelligence-gym-/
+├── .github/
+│   ├── ISSUE_TEMPLATE/                      # GitHub issue templates (Bug / Feature)
+│   ├── workflows/
+│   │   ├── ci.yml                           # Automated multi-OS/Python CI workflow
+│   │   └── paper.yml                        # JOSS paper build verification workflow
+│   └── pull_request_template.md             # Pull request checklist template
 │
-├── organoid_rl/                             # Core Python Package
-│   ├── environment/                         # Gymnasium SNN Environment
-│   │   ├── core.py                          # Main OrganoidEnv class
-│   │   ├── neurons.py                       # Metabolic Izhikevich equations
-│   │   ├── stimulator.py                    # Global Activity Regulator (GAR)
-│   │   └── rewards.py                       # D3 Dual-Trace STDP engine
-│   ├── agents/                              # Optimization Agents
-│   │   └── dqn_agent.py                     # Dueling Double DQN (PER + NoisyNet + HER)
-│   └── experiments/                         # Reproducible Experiment Pipelines
-│       ├── publication/                     # Colab multi-seed & ablation scripts
-│       └── results/                         # Empirical CSV logs & trained weights
+├── docs/                                    # Architectural diagrams, roadmaps, and review records
+│   ├── architecture_flow.mmd                # Architecture Mermaid source
+│   ├── architecture_flow.tex                # TikZ architecture source
+│   ├── OrganoidRL_Roadmap.pdf               # Project development roadmap
+│   ├── OrganoidEnv_Revision_Checklist.docx  # Revision checklist
+│   ├── drafts/                              # Historical draft archive
+│   └── reviews/                             # Reviewer comments & logs
+│
+├── examples/                                # Standalone research examples
+│   ├── 01_quickstart.py                     # Minimal environment interaction
+│   ├── 02_evaluate_pretrained_agent.py      # Load checkpoint & evaluate policy
+│   └── 03_run_ablation_comparison.py        # Compare full model vs No-GAR vs No-SDM
 │
 ├── notebooks/
-│   └── colab_gpu_training.ipynb             # 1-Click Colab Training & Reproduction
+│   └── colab_gpu_training.ipynb             # 1-Click Google Colab Training & Reproduction
 │
-├── requirements.txt                         # Dependency specifications
-└── setup.py                                 # Package setup metadata
+├── organoid_rl/                             # Core Python Package
+│   ├── __init__.py                          # Exports: OrganoidEnv, DQNAgent, __version__
+│   ├── environment/
+│   │   ├── core.py                          # Main OrganoidEnv class (Gymnasium API)
+│   │   ├── neurons.py                       # Metabolic-Izhikevich equations
+│   │   ├── rewards.py                       # Dual-Trace STDP engine
+│   │   ├── stimulator.py                    # Global Activity Regulator (GAR)
+│   │   └── baseline_envs.py                 # Gymnasium baseline wrappers
+│   ├── agents/
+│   │   ├── dqn_agent.py                     # Dueling Double DQN (PER + NoisyNet + HER)
+│   │   ├── baseline_agent.py                # MLPBaselineAgent
+│   │   └── sb3_baselines.py                 # Stable-Baselines3 baselines
+│   ├── experiments/                         # Experiment Suite & Pipelines
+│   │   ├── month1_2_basics/
+│   │   ├── month3_navigation/
+│   │   ├── month4_6_advanced/
+│   │   ├── publication/                     # Multi-seed & ablation evaluation scripts
+│   │   └── results/                         # Data logs, checkpoints (.pth), figures
+│   └── tests/                               # Test Suite
+│       ├── test_environment.py              # Standard unittest / pytest suite
+│       ├── sanity_check.py                  # Brian2 & C++ backend sanity check
+│       ├── quick_test.py                    # Simulation step test
+│       ├── test_metabolic.py                # Metabolic dynamics verification
+│       ├── diagnostic.py                    # SNN diagnostic
+│       ├── diagnostic_cursor.py             # Visual cursor simulation
+│       └── benchmark_speed.py               # Simulation FPS benchmark
+│
+├── reports/                                 # Milestone Development Reports (Weeks 1-4, Months 1-6)
+│
+├── submissions/                             # Academic Manuscripts
+│   ├── frontiers_in_neuroinformatics/       # Primary Journal Submission
+│   │   ├── organoidenv_manuscript.tex       # Full LaTeX source
+│   │   ├── organoidenv_supplementary.tex    # Supplementary material
+│   │   ├── response_to_reviewers.md         # Rebuttal & revision notes
+│   │   └── figures/                         # Vector PDF & 300 DPI PNG figures
+│   └── joss/                                # Journal of Open Source Software (JOSS)
+│       ├── paper.md                         # JOSS submission manuscript
+│       ├── paper.bib                        # Complete BibTeX bibliography with DOIs
+│       └── CITATION.cff                     # Citation metadata
+│
+├── .gitignore                               # Production gitignore
+├── CHANGELOG.md                             # Version history & release notes
+├── CITATION.cff                             # GitHub repository citation metadata
+├── CODE_OF_CONDUCT.md                       # Contributor Covenant v2.1
+├── CONTRIBUTING.md                          # Contribution & development guide
+├── Dockerfile                               # Reproducible Docker container setup
+├── LICENSE                                  # MIT License
+├── pyproject.toml                           # PEP 517/518 build & tool configuration
+├── requirements.txt                         # Runtime dependencies
+├── requirements-dev.txt                     # Development & test dependencies
+├── SECURITY.md                              # Vulnerability disclosure policy
+└── setup.py                                 # Setuptools packaging metadata
 ```
 
 ---
@@ -153,15 +199,15 @@ Organoid Intelligence/
 git clone https://github.com/vansh7nvc/Organoid-Intelligence-gym-.git
 cd Organoid-Intelligence-gym-
 
-# Install in editable mode
-pip install -e .
+# Install in editable mode with development tools
+pip install -e ".[dev]"
 ```
 
 ### 2. Basic Environment Interaction
 
 ```python
 import gymnasium as gym
-from organoid_rl.environment.core import OrganoidEnv
+from organoid_rl import OrganoidEnv
 
 # Initialize the biologically-constrained SNN environment
 env = OrganoidEnv(
@@ -171,11 +217,11 @@ env = OrganoidEnv(
     use_stabilizer=True     # Enable Global Activity Regulator (GAR)
 )
 
-obs, info = env.reset()
-print(f"Observation space dimension: {obs.shape}") # 21-dimensional state
+obs, info = env.reset(seed=42)
+print(f"Observation space dimension: {obs.shape}")  # 21-dimensional state
 
 for step in range(100):
-    action = env.action_space.sample() # Action: 0-7 stimulation pattern
+    action = env.action_space.sample()  # Action: 0-7 stimulation pattern
     obs, reward, terminated, truncated, info = env.step(action)
     
     if terminated or truncated:
@@ -183,7 +229,30 @@ for step in range(100):
         obs, info = env.reset()
 ```
 
-### 3. Run Training with 1 Click
+### 3. Run Standalone Research Examples
+
+```bash
+# 1. Quickstart demonstration
+python examples/01_quickstart.py
+
+# 2. Evaluate pre-trained DQN agent
+python examples/02_evaluate_pretrained_agent.py
+
+# 3. Run component ablation comparison
+python examples/03_run_ablation_comparison.py
+```
+
+### 4. Running Tests
+
+```bash
+# Run unit test suite
+python -m unittest discover -s organoid_rl/tests -p "test_*.py" -v
+
+# Run Brian2 sanity check
+python organoid_rl/tests/sanity_check.py
+```
+
+### 5. Run Training with 1 Click
 
 Open [`notebooks/colab_gpu_training.ipynb`](notebooks/colab_gpu_training.ipynb) in Google Colab, connect to a CPU/T4 runtime, and select **Runtime ➔ Run All**. Checkpoints and logs will automatically sync with your Google Drive.
 
@@ -191,7 +260,7 @@ Open [`notebooks/colab_gpu_training.ipynb`](notebooks/colab_gpu_training.ipynb) 
 
 ## 📜 Citation
 
-If you use **OrganoidEnv** in your research or educational projects, please cite:
+If you use **OrganoidEnv** in your research, please cite:
 
 ```bibtex
 @article{Sharma2026OrganoidEnv,
@@ -202,12 +271,12 @@ If you use **OrganoidEnv** in your research or educational projects, please cite
 }
 ```
 
-For software attribution:
+For software attribution (JOSS submission):
 ```bibtex
-@software{Sharma_OrganoidEnv_2026,
+@article{Sharma_OrganoidEnv_JOSS_2026,
   author    = {Sharma, Vansh and Malik, Seema},
   title     = {{OrganoidEnv: A Neuromorphic Testbed for Reinforcement Learning with Biologically Constrained Spiking Neural Networks}},
-  month     = aug,
+  journal   = {Journal of Open Source Software},
   year      = {2026},
   url       = {https://github.com/vansh7nvc/Organoid-Intelligence-gym-},
   version   = {1.0.0}

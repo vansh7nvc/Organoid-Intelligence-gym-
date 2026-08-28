@@ -30,7 +30,7 @@ class OrganoidEnv(gym.Env):
     """
     metadata = {'render_modes': ['human']}
 
-    def __init__(self, use_sdm=True, use_morphology=True, use_dual_trace=True, use_stabilizer=True):
+    def __init__(self, use_sdm=True, use_morphology=True, use_dual_trace=True, use_stabilizer=True, use_motor_mapping=True):
         super(OrganoidEnv, self).__init__()
         
         # --- StudySlate / Ablation Flags ---
@@ -38,6 +38,7 @@ class OrganoidEnv(gym.Env):
         self.use_morphology = use_morphology
         self.use_dual_trace = use_dual_trace
         self.use_stabilizer = use_stabilizer
+        self.use_motor_mapping = use_motor_mapping
         
         # --- Environment Configuration ---
         self.dt = 0.1 * ms  # Faster timestep (Phase 5 Optimization)
@@ -252,7 +253,14 @@ class OrganoidEnv(gym.Env):
         else:
             self.goal_radius = 0.05
         
-        return self._get_obs(), {}
+        dist = np.linalg.norm(self.cursor_pos - self.target_pos)
+        info = {
+            'cursor_pos': self.cursor_pos.tolist(),
+            'target_pos': self.target_pos.tolist(),
+            'distance': float(dist),
+            'total_spikes': len(self.spike_mon.t),
+        }
+        return self._get_obs(), info
 
     def step(self, action):
         """Executes one time step within the environment."""
@@ -480,6 +488,13 @@ class OrganoidEnv(gym.Env):
         Actions 0-3: Cardinal directions (Up, Down, Left, Right)
         Actions 4-7: Diagonal combinations
         """
+        if not self.use_motor_mapping:
+            # Ablation: Diffuse Stimulation
+            np.random.seed(action + int(self.network.t / ms))
+            diffuse_indices = np.random.choice(np.arange(self.n_neurons), size=25, replace=False)
+            self.neurons.I[diffuse_indices] += 25.0
+            return
+
         stim = 25.0
         if action == 0:    # Up
             self.neurons.I[self.motor_up[0]:self.motor_up[1]] += stim

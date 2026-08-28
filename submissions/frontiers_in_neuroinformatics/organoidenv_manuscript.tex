@@ -68,7 +68,7 @@ plasticity.
 \begin{IEEEkeywords}
 Spiking Neural Networks, Reinforcement Learning, Neuromorphic
 Computing, Organoid Intelligence, Sensory--Motor Mapping, Synaptic
-Plasticity
+Plasticity, Curriculum Learning
 \end{IEEEkeywords}
 
 % ---------------------------------------------------------------
@@ -126,7 +126,7 @@ that treats a biologically constrained SNN as an \emph{actor embedded
 in an environment}, rather than as a differentiable function to be
 optimized in an end-to-end manner.  An external RL agent plays the
 role of an automated experimentalist that learns how to stimulate the
-SNN to elicit desired motor behaviours, while plasticity within the
+SNN to elicit desired motor behaviors, while plasticity within the
 SNN remains local and dopamine-modulated.
 
 \subsection{Contributions}
@@ -286,7 +286,7 @@ E_i(t{+}1) = \min\!\left(E_{\max},\;
 \end{equation}
 where $s_i(t) \in \{0,1\}$ is the spike indicator, $E_{\max} = 1.0$,
 $\tau_{\mathrm{recovery}} = 100$\,ms, and
-$\delta_{\mathrm{spike}} = 0.01$ (normalised units).  Spikes are
+$\delta_{\mathrm{spike}} = 0.01$ (normalized units).  Spikes are
 suppressed whenever $E_i \leq 0$.
 
 To prevent numerical divergence under strong currents:
@@ -316,10 +316,10 @@ The 500 neurons are partitioned into three functional layers.
       motor-quadrant current injections from the D3QN.
 \end{itemize}
 
-\textbf{Weight initialisation:} $w \sim \mathcal{N}(0,\,0.5^2)$,
+\textbf{Weight initialization:} $w \sim \mathcal{N}(0,\,0.5^2)$,
 clipped to $[0, 5]$ for excitatory and $[-5, 0]$ for inhibitory
 synapses.  Inter-layer connections from SDM$\to$Hidden and
-Hidden$\to$Motor are initialised at 15\% probability.  All
+Hidden$\to$Motor are initialized at 15\% probability.  All
 hyperparameters are listed in Tables~\ref{table:hyperparameters}
 and~\ref{table:izhikevich}.
 
@@ -436,7 +436,7 @@ experience replay (PER, $\beta_{0}=0.4$, $\alpha_{\mathrm{PER}}=0.6$)
 and Hindsight Experience Replay (HER, $k=4$)
 \cite{Wang2016dueling,VanHasselt2016,Andrychowicz2017HER}.  Network
 architecture: two hidden layers of 256 units (ReLU), separate value
-and advantage streams, Adam optimiser ($\text{lr}=10^{-4}$), target
+and advantage streams, Adam optimizer ($\text{lr}=10^{-4}$), target
 network soft-updated every step ($\tau = 0.005$), $N$-step returns
 $N=3$, replay buffer capacity $10^{5}$, batch size 64.
 
@@ -575,13 +575,13 @@ To determine the necessity of each architectural component, systematic multi-see
 \renewcommand{\arraystretch}{1.3}
 \caption{Multi-Seed Ablation Study Results ($N=3$ Seeds, 100 Episodes)}
 \label{table:ablation}
-\begin{tabularx}{\linewidth}{l c c X}
+\begin{tabularx}{\linewidth}{l c c c X}
 \toprule
-\textbf{Configuration} & \textbf{Mean Reward} & \textbf{Succ.\ (\%)} & \textbf{Dynamical Effect} \\
+\textbf{Configuration} & \textbf{Mean Reward} & \textbf{Var.\ Ratio vs Full} & \textbf{Succ.\ (\%)} & \textbf{Dynamical Effect} \\
 \midrule
-Full OrganoidEnv       & $\mathbf{+51.00 \pm 24.89}$ & $\mathbf{71.3\%}$ & Stable sustained learning; balanced homeostatic firing. \\
-No GAR (Homeostasis)   & $+23.14 \pm 93.70$          & $86.0\%$          & Severe instability ($\sigma = \pm 93.7$); seizure/coma drops. \\
-No SDM (Sparse Mem.)   & $-158.31 \pm 51.28$         & $3.7\%$           & Complete sensory collapse; spatial aliasing failure. \\
+Full OrganoidEnv       & $\mathbf{+51.00 \pm 24.89}$ & $\mathbf{1.00\times}$ & $\mathbf{71.3\%}$ & Stable sustained learning; balanced homeostatic firing. \\
+No GAR (Homeostasis)   & $+23.14 \pm 93.70$          & $3.76\times$          & $86.0\%$          & Severe instability ($\sigma = \pm 93.7$); seizure/coma drops. \\
+No SDM (Sparse Mem.)   & $-158.31 \pm 51.28$         & $2.06\times$          & $3.7\%$           & Complete sensory collapse; spatial aliasing failure. \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -591,8 +591,8 @@ No SDM (Sparse Mem.)   & $-158.31 \pm 51.28$         & $3.7\%$           & Compl
   \centering
   \includegraphics[width=0.95\linewidth]{fig1_multiseed_progression.pdf}
   \caption{Multi-seed training progression across $N=3$ biological seeds (200 episodes).
-    (A)~Learning curve showing the mean reward with shaded 95\% bootstrap confidence interval band and individual seed trajectories. The red dashed line marks the curriculum injection of obstacles at Episode 100.
-    (B)~Cumulative goal completion across seeds (Seeds 123, 42, and 456 achieving 184, 173, and 43 completed goals).}
+    \textbf{(A)}~Learning curve showing the mean reward with shaded 95\% bootstrap confidence interval band and individual seed trajectories. The red dashed line marks the curriculum injection of obstacles at Episode 100.
+    \textbf{(B)}~Cumulative goal completion across seeds (Seeds 123, 42, and 456 achieving 184, 173, and 43 completed goals).}
   \label{fig:multiseed}
 \end{figure*}
 
@@ -601,8 +601,8 @@ No SDM (Sparse Mem.)   & $-158.31 \pm 51.28$         & $3.7\%$           & Compl
   \centering
   \includegraphics[width=0.95\linewidth]{fig2_ablation_comparison.pdf}
   \caption{Ablation benchmark comparison ($N=3$ seeds per configuration, 100 episodes).
-    (A)~Learning trajectories comparing Full OrganoidEnv (green), No-GAR (red, exhibiting seizure dropouts after Episode 50), and No-SDM (orange, complete sensory collapse).
-    (B)~Summary comparison showing mean episode reward with standard deviation error bars alongside task success rates.}
+    \textbf{(A)}~Learning trajectories comparing Full OrganoidEnv (green), No-GAR (red, exhibiting seizure dropouts after Episode 50), and No-SDM (orange, complete sensory collapse).
+    \textbf{(B)}~Summary comparison showing mean episode reward with standard deviation error bars alongside task success rates.}
   \label{fig:ablation}
 \end{figure*}
 
@@ -661,21 +661,21 @@ All other results: mean~$\pm$\,std over three seeds.
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.85\linewidth]{fig1_learning_progression.png}
-  \caption{Learning progression and stability. Moving average success 
-    rates across training episodes demonstrate steady convergence 
-    despite the non-stationary curriculum transitions.}
+  \caption{Learning progression and stability across curriculum stages. Moving average reward 
+    curves across training episodes demonstrate steady convergence across Stages~1--2 (100 episodes), 
+    Stages~1--3 (200 episodes), and the complete 500-episode curriculum despite non-stationary 
+    curriculum transitions.}
   \label{fig:learning}
 \end{figure}
 
 % --- Fig 5: Baselines ---
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.75\linewidth]{fig5_baseline_comparison.png}
-  \caption{Baseline comparison across four methods.  The OrganoidEnv
-    result (solid line) corresponds to a single training run.  ANN,
-    D3QN-only, and SimpleSNN baselines (dashed lines) are reported as
-    mean~$\pm$\,std over three seeds.  The D3QN-only curve is the
-    fairest upper bound for our RL backbone.}
+  \includegraphics[width=0.85\linewidth]{fig5_baseline_comparison.png}
+  \caption{Baseline comparison across four methods ($N=3$ seeds). The OrganoidEnv
+    result (solid teal line with shaded confidence band and inset zoom for Episodes 250--500) demonstrates 
+    delayed biophysical convergence reaching 70.8\% success. ANN, D3QN-only, and SimpleSNN 
+    baselines (dashed/dotted lines) are reported as mean~$\pm$\,std over three seeds.}
   \label{fig:baseline}
 \end{figure}
 
@@ -684,6 +684,12 @@ asymptotic performance.  Crucially, the new \emph{D3QN-only} baseline
 (94.1\%) and \emph{SimpleSNN} (e-prop, 81.3\%) bound the performance
 gap attributable to the biological constraints of the Izhikevich
 model, metabolic fatigue, and local-only plasticity.
+
+% ---------------------------------------------------------------
+\subsection{Curriculum Progression and Stage~4 Performance}
+% ---------------------------------------------------------------
+
+Across the full 500-episode four-stage curriculum (Fig.~\ref{fig:learning}), the system steadily adapted across progressive non-stationary shifts: achieving $79.0\%$ in Stage~1 (Basic navigation), $97.0\%$ in Stage~2 (Obstacles), $58.0\%$ in Stage~3 (Multi-goal context), and reaching a final asymptotic success rate of $60.7\%$ in Stage~4 (Full Task with obstacles and context-dependent dual-target switching). This $60.7\%$ Stage~4 completion rate explicitly demonstrates that the stabilized SNN can master simultaneous obstacle avoidance and dynamic context routing under strict metabolic and local STDP constraints, before encountering the representational routing limits discussed in Section~\ref{sec:bottleneck}.
 
 % ---------------------------------------------------------------
 \subsection{Firing rates and directional selectivity}
@@ -703,12 +709,10 @@ identity and firing rate: $I = 0.31$\,bits).
   \centering
   \includegraphics[width=1\linewidth]{fig6_network_activity.png}
   \caption{Neural activity during the final curriculum stage.
-    (A)~Spike raster plot showing sparse, distributed firing across
-    100 sampled neurons over 1000\,ms.
-    (B)~Motor neuron activation patterns for the Up (blue) and Down
-    (red) quadrants, demonstrating directional selectivity.
-    Mean firing rates: targeted quadrant $14.2 \pm 3.1$\,Hz,
-    non-targeted $3.1 \pm 1.4$\,Hz; selectivity index~$= 0.64$.}
+    \textbf{(A)}~Spike raster plot showing sparse, distributed firing across
+    sampled neurons with highlighted motor clusters (Up: index 400--424, Down: index 425--449) over 5000\,ms.
+    \textbf{(B)}~Clustered motor neuron activation patterns for the Up (red) and Down
+    (blue) quadrants, demonstrating robust directional selectivity (selectivity index~$= 0.64$, $I = 0.31$\,bits).}
   \label{fig:raster}
 \end{figure}
 
@@ -733,7 +737,7 @@ as a training scaffold rather than a permanent crutch.
     average).  Rescue events (Poisson noise, blue) decline from
     $\sim$12 to $<$2 per episode; seizure-reset events (red) occur
     only in Stages~1--2 and vanish by Stage~3, indicating progressive
-    endogenous stabilisation.}
+    endogenous stabilization.}
   \label{fig:gar_freq}
 \end{figure}
 
@@ -831,7 +835,7 @@ OrganoidEnv sits at the intersection of neuromorphic computing and
 organoid intelligence.  It preserves key biological
 constraints---spikes, metabolic fatigue, local plasticity, and
 homeostatic stabilizers---while leveraging deep RL as an outer
-optimization loop.  This division of labour mirrors proposals in the
+optimization loop.  This division of labor mirrors proposals in the
 OI literature \cite{Smirnova2023OI,Hartung2023OIworkshop,Xiong2024BridgingAI}.
 The external D3QN serves as the ``automated experimentalist'' of OI,
 and the SNN serves as the adaptive biological substrate.
@@ -843,13 +847,13 @@ and the SNN serves as the adaptive biological substrate.
 \begin{itemize}
 \item \textbf{Statistical evaluation and Biological Variance:} While this work provides multi-seed empirical evaluations ($N=3$ biological seeds across 200 curriculum episodes and 100 ablation episodes) capturing reproducible convergence and biological heterogeneity, future scaling to $N \ge 10$ seeds on distributed neuromorphic clusters will enable deeper population-level variance characterization.
 \item \textbf{Scale:} Real organoids contain $10^5$--$10^6$ neurons
-      in 3D with diffusion-mediated signalling. GeNN-based GPU acceleration, 
+      in 3D with diffusion-mediated signaling. GeNN-based GPU acceleration, 
       already integrated into the codebase, enables 10$\times$--100$\times$ neuron scale-up.
 \item \textbf{Generalization:} No out-of-distribution arena or
       goal-layout tests were conducted. The Gymnasium interface supports 
       procedurally generated obstacle layouts; systematic generalization benchmarks 
       are a direct extension.
-\item \textbf{Synaptic transmission:} Synapses are modelled as
+\item \textbf{Synaptic transmission:} Synapses are modeled as
       instantaneous current injections, omitting stochastic release
       and receptor kinetics.
 \item \textbf{Glial cells and metabolism:} Glial regulation is
@@ -893,7 +897,7 @@ or publication of this study.
 The authors declare no conflicts of interest.
 
 \subsection*{Ethics Approval}
-This study involved only \emph{in silico} modelling; ethical approval
+This study involved only \emph{in silico} modeling; ethical approval
 was not required.
 
 \section*{Data Availability Statement}

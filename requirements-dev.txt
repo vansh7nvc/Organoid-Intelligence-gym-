@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest>=7.0.0
+ruff>=0.1.0
+black>=23.0.0
+stable-baselines3>=2.0.0
+ray[tune]>=2.9.0

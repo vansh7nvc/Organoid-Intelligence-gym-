@@ -1,0 +1,31 @@
+{
+  "condition": "b1_direct_d3qn",
+  "seed": 123,
+  "ood_topologies": {
+    "T0_nominal": {
+      "mean_return": -68.4840048425388,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.5037821379948817
+    },
+    "T1_dual_circle": {
+      "mean_return": -100.33031021713546,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.798105316690413
+    },
+    "T2_slanted_walls": {
+      "mean_return": -585.9431849654056,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.6844155088255998
+    },
+    "T3_central_maze": {
+      "mean_return": -118.05652312373293,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.6930994756032549
+    },
+    "T4_tight_corridor": {
+      "mean_return": -120.16240000415037,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.8173696915523136
+    }
+  }
+}

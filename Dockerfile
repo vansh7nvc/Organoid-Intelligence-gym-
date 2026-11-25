@@ -1,7 +1,7 @@
-# OrganoidEnv: Containerized Neuromorphic Simulation Testbed
+# OrganoidEnv: Reproducible Containerized SNN-RL Testbed & 3D Workbench
 FROM python:3.11-slim
 
-# Install system compilation dependencies for Brian2 Cython backend
+# System build tools for C99 SNN integration kernel & Brian2 Cython
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
@@ -11,15 +11,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /workspace
 
-# Install python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python runtime + platform + publication dependencies
+COPY pyproject.toml requirements.txt ./
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy repository source
 COPY . .
 
-# Install package in editable mode
-RUN pip install --no-cache-dir -e .
+# Install OrganoidEnv with platform and publication extras, and pre-compile C99 SNN kernel
+RUN pip install --no-cache-dir -e ".[dev,publication,platform]" && \
+    python -c "from organoid_rl.environment.fast_snn import load_snn_kernel; assert load_snn_kernel() is not None"
 
-# Default command: run quickstart example
-CMD ["python", "examples/01_quickstart.py"]
+EXPOSE 8000
+
+# Default: start interactive 3D workbench on 0.0.0.0:8000
+CMD ["python", "scripts/launch_platform.py", "--host", "0.0.0.0", "--port", "8000", "--no-browser"]

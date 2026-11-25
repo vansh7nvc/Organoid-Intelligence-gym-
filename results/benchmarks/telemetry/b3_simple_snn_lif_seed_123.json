@@ -1,0 +1,70 @@
+{
+  "condition": "b3_simple_snn_lif",
+  "seed": 123,
+  "eval_mean_rate_hz": 65.145,
+  "eval_final_atp": 1.0,
+  "mean_sdm_sparsity": 1.0,
+  "w_exc_mean": 11.793366432189941,
+  "w_exc_zero_frac": 0.0,
+  "w_inh_mean": 11.788769721984863,
+  "dsi_matrix": [
+    [
+      67.0,
+      67.0,
+      67.0,
+      67.04
+    ],
+    [
+      65.0,
+      65.0,
+      65.0,
+      65.0
+    ],
+    [
+      66.0,
+      66.0,
+      66.0,
+      66.0
+    ],
+    [
+      67.0,
+      67.0,
+      67.0,
+      67.04
+    ]
+  ],
+  "dsi_per_dir": [
+    0.00029841838257018674,
+    0.0,
+    0.0,
+    0.00029841838257018674
+  ],
+  "dsi_overall": 0.00014920919128509337,
+  "ood_topologies": {
+    "T0_nominal": {
+      "mean_return": -84.45375396746347,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.7477281622310769
+    },
+    "T1_dual_circle": {
+      "mean_return": -54.45254279934396,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.6435192150935507
+    },
+    "T2_slanted_walls": {
+      "mean_return": -145.48024689857365,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.7491617500762208
+    },
+    "T3_central_maze": {
+      "mean_return": -118.92331106879621,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.5996380110574872
+    },
+    "T4_tight_corridor": {
+      "mean_return": -37.23071934368173,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.5998260463250209
+    }
+  }
+}

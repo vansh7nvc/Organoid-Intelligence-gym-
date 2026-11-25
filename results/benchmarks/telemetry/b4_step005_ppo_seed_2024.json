@@ -1,0 +1,31 @@
+{
+  "condition": "b4_step005_ppo",
+  "seed": 2024,
+  "ood_topologies": {
+    "T0_nominal": {
+      "mean_return": 115.48541191815325,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.4312658056650537
+    },
+    "T1_dual_circle": {
+      "mean_return": 48.97459320503699,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.5111975111376197
+    },
+    "T2_slanted_walls": {
+      "mean_return": -211.3596019535781,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.3114058154749994
+    },
+    "T3_central_maze": {
+      "mean_return": -315.74825638580825,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.4752486719641646
+    },
+    "T4_tight_corridor": {
+      "mean_return": -439.4112702164522,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.3187745658208649
+    }
+  }
+}

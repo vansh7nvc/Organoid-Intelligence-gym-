@@ -1,0 +1,179 @@
+{
+  "alpha_gof": {
+    "c0_full_model": {
+      "n": 3042,
+      "alpha": 1.312182453125925,
+      "ks": 0.3460497204282792,
+      "p_gof": 0.0,
+      "llr_vs_exp": -1548.9002785955015,
+      "p_llr": 0.0
+    },
+    "c1_frozen_stdp": {
+      "n": 3947,
+      "alpha": 1.306260312520649,
+      "ks": 0.4298132211310729,
+      "p_gof": 0.0,
+      "llr_vs_exp": -2727.0549541238433,
+      "p_llr": 0.0
+    },
+    "c2_random_snn": {
+      "n": 3621,
+      "alpha": 1.3017710423640723,
+      "ks": 0.42332948782775215,
+      "p_gof": 0.0,
+      "llr_vs_exp": -2517.9908161276926,
+      "p_llr": 0.0
+    },
+    "c3_no_metabolism": {
+      "n": 4586,
+      "alpha": 1.2547407588664499,
+      "ks": 0.42760004284690645,
+      "p_gof": 0.0,
+      "llr_vs_exp": -3850.358966965729,
+      "p_llr": 0.0
+    },
+    "c4_no_gar": {
+      "n": 2917,
+      "alpha": 1.3124081539877352,
+      "ks": 0.31704722644203986,
+      "p_gof": 0.0,
+      "llr_vs_exp": -1396.521913179743,
+      "p_llr": 0.0
+    },
+    "b3_simple_snn_lif": {
+      "n": 5212,
+      "alpha": 1.1725115710422729,
+      "ks": 0.6290722876342756,
+      "p_gof": 0.0,
+      "llr_vs_exp": -9098.094178749121,
+      "p_llr": 0.0
+    }
+  },
+  "long_horizon_stability_60s": [
+    {
+      "use_stabilizer": false,
+      "use_metabolism": false,
+      "i_stim": 50.0,
+      "w_inh": 5.0,
+      "rate_0_5s_hz": 138.63560000000004,
+      "rate_5_30s_hz": 139.08864000000003,
+      "rate_30_60s_hz": 139.0616,
+      "final_atp": 1.0,
+      "gar_counters": {
+        "seizure_clamps": 0,
+        "coma_kicks": 0,
+        "nan_resets": 0
+      }
+    },
+    {
+      "use_stabilizer": false,
+      "use_metabolism": true,
+      "i_stim": 50.0,
+      "w_inh": 5.0,
+      "rate_0_5s_hz": 14.423200000000001,
+      "rate_5_30s_hz": 12.460480000000002,
+      "rate_30_60s_hz": 12.457400000000002,
+      "final_atp": -0.02717071508639976,
+      "gar_counters": {
+        "seizure_clamps": 0,
+        "coma_kicks": 0,
+        "nan_resets": 0
+      }
+    },
+    {
+      "use_stabilizer": true,
+      "use_metabolism": false,
+      "i_stim": 50.0,
+      "w_inh": 5.0,
+      "rate_0_5s_hz": 68.78200000000001,
+      "rate_5_30s_hz": 66.82719999999999,
+      "rate_30_60s_hz": 67.055,
+      "final_atp": 1.0,
+      "gar_counters": {
+        "seizure_clamps": 200,
+        "coma_kicks": 200,
+        "nan_resets": 0
+      }
+    },
+    {
+      "use_stabilizer": true,
+      "use_metabolism": true,
+      "i_stim": 50.0,
+      "w_inh": 5.0,
+      "rate_0_5s_hz": 14.4524,
+      "rate_5_30s_hz": 12.56544,
+      "rate_30_60s_hz": 12.566733333333334,
+      "final_atp": -0.04638714096017869,
+      "gar_counters": {
+        "seizure_clamps": 0,
+        "coma_kicks": 1,
+        "nan_resets": 0
+      }
+    },
+    {
+      "use_stabilizer": true,
+      "use_metabolism": true,
+      "i_stim": 5.0,
+      "w_inh": 30.0,
+      "rate_0_5s_hz": 12.6004,
+      "rate_5_30s_hz": 12.15112,
+      "rate_30_60s_hz": 12.222466666666666,
+      "final_atp": -0.0176905575510535,
+      "gar_counters": {
+        "seizure_clamps": 0,
+        "coma_kicks": 1,
+        "nan_resets": 0
+      }
+    }
+  ],
+  "episode_decomposition": {
+    "c0_full_model": {
+      "mean_step_disp": 0.6923441501327653,
+      "max_step_disp": 1.4142135623730951,
+      "mean_collisions_per_ep": 3.2,
+      "mean_dw_l2_per_ep": 485.99557751103094,
+      "mean_return": -132.85228642318174,
+      "gar_counters_10ep": {
+        "seizure_clamps": 0,
+        "coma_kicks": 1,
+        "nan_resets": 0
+      }
+    },
+    "c1_frozen_stdp": {
+      "mean_step_disp": 0.47058914385002837,
+      "max_step_disp": 1.4142135623730951,
+      "mean_collisions_per_ep": 6.2,
+      "mean_dw_l2_per_ep": 0.0,
+      "mean_return": -31.76936698428154,
+      "gar_counters_10ep": {
+        "seizure_clamps": 0,
+        "coma_kicks": 1,
+        "nan_resets": 0
+      }
+    },
+    "c3_no_metabolism": {
+      "mean_step_disp": 0.7273126964523208,
+      "max_step_disp": 1.4142135623730951,
+      "mean_collisions_per_ep": 2.8,
+      "mean_dw_l2_per_ep": 634.6299637125214,
+      "mean_return": -138.00436650045336,
+      "gar_counters_10ep": {
+        "seizure_clamps": 0,
+        "coma_kicks": 1,
+        "nan_resets": 0
+      }
+    },
+    "c4_no_gar": {
+      "mean_step_disp": 0.6991898179730769,
+      "max_step_disp": 1.4142135623730951,
+      "mean_collisions_per_ep": 2.9,
+      "mean_dw_l2_per_ep": 665.9203668418802,
+      "mean_return": -129.1560683660185,
+      "gar_counters_10ep": {
+        "seizure_clamps": 0,
+        "coma_kicks": 0,
+        "nan_resets": 0
+      }
+    }
+  }
+}

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "organoid_rl"
-version = "1.0.0"
-description = "OrganoidEnv: A Stabilized Reinforcement Learning Environment for Biological Spiking Networks"
+version = "1.2.0"
+description = "OrganoidEnv: An Open, Ablatable Spiking Testbed for Studying Metabolic and Homeostatic Constraints in Organoid-Inspired Closed-Loop Reinforcement Learning"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -53,6 +53,17 @@ baselines = [
     "stable-baselines3>=2.0.0",
     "ray[tune]>=2.9.0",
 ]
+publication = [
+    "rliable>=1.2.0",
+    "elephant>=1.2.0",
+    "neo>=0.13.0",
+    "quantities>=0.15.0",
+]
+platform = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.0",
+    "websockets>=12.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/vansh7nvc/Organoid-Intelligence-gym-"
@@ -65,8 +76,9 @@ where = ["."]
 include = ["organoid_rl*"]
 
 [tool.pytest.ini_options]
-testpaths = ["organoid_rl/tests"]
-python_files = ["test_*.py", "*_test.py"]
+testpaths = ["tests", "organoid_rl/tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
 
 [tool.ruff]
 line-length = 100

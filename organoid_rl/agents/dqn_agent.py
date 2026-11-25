@@ -5,6 +5,7 @@ Noisy Networks, N-step Returns, and Hindsight Experience Replay (HER).
 Target: 85-95% success rate on multi-goal organoid navigation.
 """
 
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -207,6 +208,9 @@ class PrioritizedReplayBuffer:
         return self.tree.n_entries
 
 
+ReplayBuffer = PrioritizedReplayBuffer
+
+
 # --- DQN Agent ---
 class DQNAgent:
     """
@@ -367,18 +371,97 @@ class DQNAgent:
         self.losses.append(loss.item())
         return loss.item()
 
+    def get_state_dict(self):
+        """
+        Extracts agent networks, optimizer state, RNG snapshots, replay buffer, and n-step buffer.
+        Complies with OrganoidEnv Master Verifier Plan §2.1.
+        """
+        n_ent = int(self.replay_buffer.tree.n_entries)
+        cap = int(self.replay_buffer.tree.capacity)
+        active_slice = self.replay_buffer.tree.data[:cap] if n_ent == cap else self.replay_buffer.tree.data[:n_ent]
+        serialized_entries = [
+            (np.array(t.state, copy=True), int(t.action), float(t.reward), np.array(t.next_state, copy=True), bool(t.done))
+            if isinstance(t, Transition) else t
+            for t in active_slice
+        ]
+        # Store only non-zero tree nodes or full tree array cleanly
+        replay_state = {
+            'capacity': cap,
+            'write': int(self.replay_buffer.tree.write),
+            'n_entries': n_ent,
+            'tree': np.array(self.replay_buffer.tree.tree, copy=True),
+            'entries': serialized_entries,
+            'frame': int(self.replay_buffer.frame),
+            'max_priority': float(self.replay_buffer.max_priority),
+        }
+        return {
+            'agent_online_net': self.online_net.state_dict(),
+            'agent_target_net': self.target_net.state_dict(),
+            'agent_optimizer': self.optimizer.state_dict(),
+            'agent_train_step': int(self.train_step),
+            'agent_n_step_buffer': list(self.n_step_buffer),
+            'agent_replay_buffer': replay_state,
+            'rng_states': {
+                'random_state': random.getstate(),
+                'numpy_state': np.random.get_state(),
+                'torch_cpu_state': torch.get_rng_state(),
+                'torch_cuda_state': torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+            },
+        }
+
+    def load_state_dict(self, checkpoint):
+        """
+        Restores agent networks, optimizer state, replay buffers, and RNG snapshots.
+        """
+        online_key = 'agent_online_net' if 'agent_online_net' in checkpoint else 'online_state_dict'
+        target_key = 'agent_target_net' if 'agent_target_net' in checkpoint else 'target_state_dict'
+        optim_key = 'agent_optimizer' if 'agent_optimizer' in checkpoint else 'optimizer_state_dict'
+
+        self.online_net.load_state_dict(checkpoint[online_key])
+        self.target_net.load_state_dict(checkpoint[target_key])
+        self.optimizer.load_state_dict(checkpoint[optim_key])
+
+        if 'agent_train_step' in checkpoint:
+            self.train_step = int(checkpoint['agent_train_step'])
+        if 'agent_n_step_buffer' in checkpoint:
+            self.n_step_buffer = deque(checkpoint['agent_n_step_buffer'], maxlen=self.n_step)
+
+        if 'agent_replay_buffer' in checkpoint:
+            rb = checkpoint['agent_replay_buffer']
+            cap = int(rb['capacity'])
+            if self.replay_buffer.tree.capacity != cap:
+                self.replay_buffer = PrioritizedReplayBuffer(capacity=cap)
+            self.replay_buffer.tree.tree = np.array(rb['tree'], copy=True)
+            self.replay_buffer.tree.data = np.zeros(cap, dtype=object)
+            for idx, entry in enumerate(rb['entries']):
+                if isinstance(entry, tuple) and len(entry) == 5:
+                    self.replay_buffer.tree.data[idx] = Transition(*entry)
+                else:
+                    self.replay_buffer.tree.data[idx] = entry
+            self.replay_buffer.tree.write = int(rb['write'])
+            self.replay_buffer.tree.n_entries = int(rb['n_entries'])
+            self.replay_buffer.frame = int(rb['frame'])
+            self.replay_buffer.max_priority = float(rb['max_priority'])
+
+        if 'rng_states' in checkpoint and checkpoint['rng_states'] is not None:
+            rng = checkpoint['rng_states']
+            if 'random_state' in rng:
+                random.setstate(rng['random_state'])
+            if 'numpy_state' in rng:
+                np.random.set_state(rng['numpy_state'])
+            if 'torch_cpu_state' in rng:
+                torch.set_rng_state(rng['torch_cpu_state'])
+            if torch.cuda.is_available() and rng.get('torch_cuda_state') is not None:
+                torch.cuda.set_rng_state_all(rng['torch_cuda_state'])
+
     def save_checkpoint(self, path):
-        """Save network weights."""
-        torch.save({
-            'online_state_dict': self.online_net.state_dict(),
-            'target_state_dict': self.target_net.state_dict(),
-            'optimizer_state_dict': self.optimizer.state_dict(),
-        }, path)
+        """Atomically save network weights, optimizer state, and RNG states."""
+        tmp_path = str(path) + '.tmp'
+        torch.save(self.get_state_dict(), tmp_path)
+        os.replace(tmp_path, path)
 
     def load_checkpoint(self, path):
-        """Load network weights."""
-        checkpoint = torch.load(path, map_location=self.device)
-        self.online_net.load_state_dict(checkpoint['online_state_dict'])
-        self.target_net.load_state_dict(checkpoint['target_state_dict'])
-        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        """Load network weights, optimizer state, and RNG states."""
+        checkpoint = torch.load(path, map_location=self.device, weights_only=False)
+        self.load_state_dict(checkpoint)
 

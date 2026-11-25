@@ -6,6 +6,9 @@ __pycache__/
 *$py.class
 *.so
 *.pyd
+*.dll
+*.exe
+bin/
 
 # ==============================================================================
 # Distribution / Packaging
@@ -27,6 +30,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.zip
 
 # ==============================================================================
 # Virtual Environments
@@ -94,6 +98,7 @@ htmlcov/
 .claude/
 .gemini/
 .opencode/
+.agents/
 *.swp
 *.swo
 *~

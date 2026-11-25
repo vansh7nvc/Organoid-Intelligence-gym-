@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrganoidEnv — Closed-Loop Spiking Neuro-RL Workbench</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg: #09090b;
+      --surface: #111114;
+      --surface-2: #18181b;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --text: #fafafa;
+      --text-secondary: #a1a1aa;
+      --accent: #3b82f6;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --orange: #f97316;
+      --red: #ef4444;
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Accessible Focus */
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .brand { display: flex; align-items: baseline; gap: 14px; }
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--emerald);
+    }
+
+    nav.tabs { display: flex; gap: 6px; }
+    .tab-btn {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--surface-2); }
+    .tab-btn[aria-selected="true"] {
+      color: var(--text);
+      background: var(--surface-2);
+      border-color: var(--border-strong);
+    }
+
+    main { max-width: 1680px; margin: 0 auto; padding: 20px 28px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Split Stage Grid */
+    .split-stage {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    aside.controls {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      position: sticky;
+      top: 78px;
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    select, input[type="number"], input[type="range"] {
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+    }
+    input[type="range"] { padding: 0; accent-color: var(--accent); }
+
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(39, 39, 42, 0.55);
+      font-size: 13px;
+    }
+    .toggle-item:last-of-type { border-bottom: none; }
+    .toggle-item input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+    }
+
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    }
+    .btn:hover { border-color: var(--border-strong); background: #222227; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+      font-weight: 600;
+    }
+    .btn-primary:hover { background: #e4e4e7; border-color: #e4e4e7; }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .dpad .btn { padding: 7px 4px; font-size: 12px; font-family: var(--font-mono); }
+
+    /* Stage Visuals */
+    .stage-main { display: flex; flex-direction: column; gap: 18px; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .kpi-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .kpi-value {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bento-top {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 18px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .panel-sub { font-size: 12px; color: var(--text-secondary); }
+
+    /* Three.js Viewport */
+    #three-wrap {
+      position: relative;
+      width: 100%;
+      height: 390px;
+      background: radial-gradient(circle at 50% 45%, #12151f 0%, #09090b 80%);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .three-overlay {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: rgba(9, 9, 11, 0.72);
+      backdrop-filter: blur(6px);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(39, 39, 42, 0.8);
+    }
+    .dot-legend { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .dot-item { display: inline-flex; align-items: center; gap: 5px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    canvas.viz-canvas {
+      width: 100%;
+      background: #09090b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: block;
+    }
+
+    .motor-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .motor-cell {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .motor-bar-bg {
+      height: 5px; background: var(--surface-2); border-radius: 3px; margin-top: 6px; overflow: hidden;
+    }
+    .motor-bar-fill {
+      height: 100%; background: var(--emerald); transition: width 0.12s ease-out;
+    }
+
+    .bento-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    /* Data Tables */
+    .table-scroll { max-height: 480px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    th {
+      font-family: var(--font-display);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+      background: var(--surface-2);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    .phase-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .heatmap-table td { text-align: center; font-family: var(--font-mono); font-weight: 600; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+    @media (max-width: 1200px) {
+      .split-stage, .bento-top, .bento-bottom, .phase-grid { grid-template-columns: 1fr; }
+      aside.controls { position: static; }
+      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>OrganoidEnv</h1>
+      <span class="status-pill"><span class="status-dot"></span><span id="kernel-badge">Initializing...</span></span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Platform Views">
+      <button class="tab-btn" role="tab" aria-selected="true" onclick="switchTab('sandbox', this)">3D Organoid Sandbox</button>
+      <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('benchmarks', this)">18-Condition Benchmarks</button>
+      <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('sweeps', this)">Stability &amp; Sensitivity</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TAB 1: LIVE SANDBOX -->
+    <section id="tab-sandbox" class="tab-panel active" role="tabpanel">
+      <div class="split-stage">
+        <aside class="controls" aria-label="Simulation Controls">
+          <div class="section-title">Ablation &amp; Protocol</div>
+
+          <div class="field">
+            <label for="preset-select">Condition Preset</label>
+            <select id="preset-select" onchange="applyPreset()">
+              <option value="c0">C0 — Full Model (Met + GAR + Plasticity)</option>
+              <option value="c1">C1 — Frozen Weights (No Plasticity)</option>
+              <option value="c3">C3 — No Metabolism (GAR On)</option>
+              <option value="c4">C4 — No GAR (Metabolism On)</option>
+              <option value="c8">C8 — Unregulated (GAR Off, Met Off)</option>
+            </select>
+          </div>
+
+          <div class="toggle-item"><span>Metabolic Fatigue (E)</span><input type="checkbox" id="flag-met" checked onchange="sendConfig(false)" /></div>
+          <div class="toggle-item"><span>Global Activity Regulator (GAR)</span><input type="checkbox" id="flag-gar" checked onchange="sendConfig(false)" /></div>
+          <div class="toggle-item"><span>Three-Factor Plasticity</span><input type="checkbox" id="flag-plast" checked onchange="sendConfig(false)" /></div>
+          <div class="toggle-item"><span>Dual-Trace (100 / 2500 ms)</span><input type="checkbox" id="flag-dual" checked onchange="sendConfig(false)" /></div>
+          <div class="toggle-item"><span>Structural Pruning</span><input type="checkbox" id="flag-prune" checked onchange="sendConfig(false)" /></div>
+
+          <div class="field" style="margin-top:12px;">
+            <label for="slider-de"><span>Spike Cost &Delta;_E</span><span class="mono" id="val-de">0.10</span></label>
+            <input type="range" id="slider-de" min="0" max="0.25" step="0.01" value="0.10"
+              oninput="document.getElementById('val-de').textContent=parseFloat(this.value).toFixed(2)"
+              onchange="sendConfig(false)" />
+          </div>
+
+          <div class="field">
+            <label for="topo-select">Obstacle Topology</label>
+            <select id="topo-select" onchange="sendConfig(true)">
+              <option value="T0_nominal">T0 Nominal (Stage 4)</option>
+              <option value="T1_dual_circle">T1 Dual Circle (OOD)</option>
+              <option value="T2_slanted_walls">T2 Slanted Walls (OOD)</option>
+              <option value="T3_central_maze">T3 Central Maze (OOD)</option>
+              <option value="T4_tight_corridor">T4 Tight Corridor (OOD)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Curriculum Stage &amp; Seed</label>
+            <div style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:8px;">
+              <select id="stage-select" aria-label="Curriculum Stage" onchange="sendConfig(true)">
+                <option value="1">Stage 1 (r=0.15)</option>
+                <option value="2">Stage 2 (r=0.10)</option>
+                <option value="3">Stage 3 (r=0.10)</option>
+                <option value="4" selected>Stage 4 (r=0.05)</option>
+              </select>
+              <input type="number" id="seed-input" aria-label="Random Seed" value="42" onchange="sendConfig(true)" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="policy-select">Control Policy</label>
+            <select id="policy-select" onchange="wsSend({cmd:'set_policy', policy:this.value})">
+              <option value="goal_seeker">Goal-Seeker Heuristic</option>
+              <option value="random">Random Policy</option>
+              <option value="manual">Manual (D-Pad / WASD)</option>
+            </select>
+          </div>
+
+          <div class="btn-grid">
+            <button class="btn btn-primary" id="btn-play" onclick="togglePlay()">Play</button>
+            <button class="btn" onclick="stepOnce()">Step +100ms</button>
+            <button class="btn" onclick="sendConfig(true, false)">Hard Reset</button>
+            <button class="btn" onclick="sendConfig(true, true)">Keep Weights</button>
+          </div>
+
+          <div class="section-title" style="margin-top:18px;">Manual Drive &amp; Probes</div>
+          <div class="dpad">
+            <button class="btn" onclick="manualStep(5)">NW</button>
+            <button class="btn" onclick="manualStep(0)">N</button>
+            <button class="btn" onclick="manualStep(4)">NE</button>
+            <button class="btn" onclick="manualStep(2)">W</button>
+            <button class="btn" onclick="pauseSim()">Hold</button>
+            <button class="btn" onclick="manualStep(3)">E</button>
+            <button class="btn" onclick="manualStep(7)">SW</button>
+            <button class="btn" onclick="manualStep(1)">S</button>
+            <button class="btn" onclick="manualStep(6)">SE</button>
+          </div>
+          <div class="btn-grid" style="margin-top:8px;">
+            <button class="btn" onclick="wsSend({cmd:'probe', quadrant:0})">Probe Up +25</button>
+            <button class="btn" onclick="wsSend({cmd:'probe', quadrant:3})">Probe Right +25</button>
+          </div>
+        </aside>
+
+        <div class="stage-main">
+          <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-label">Step / Return</div><div class="kpi-value" id="kpi-ret">0 / 0.0</div></div>
+            <div class="kpi-card"><div class="kpi-label">Population Rate</div><div class="kpi-value" id="kpi-rate">0.0 Hz</div></div>
+            <div class="kpi-card"><div class="kpi-label">Mean Energy E</div><div class="kpi-value" id="kpi-atp">1.000</div></div>
+            <div class="kpi-card"><div class="kpi-label">Exhausted (E &le; 0)</div><div class="kpi-value" id="kpi-exh">0.0%</div></div>
+            <div class="kpi-card"><div class="kpi-label">Encoder Top-k</div><div class="kpi-value" id="kpi-sdm">0.0%</div></div>
+            <div class="kpi-card"><div class="kpi-label">GAR Clamps / Kicks</div><div class="kpi-value" id="kpi-gar">0 / 0</div></div>
+          </div>
+
+          <div class="bento-top">
+            <div class="panel">
+              <div class="panel-head">
+                <div>
+                  <div class="panel-title">3D Cortical Organoid Connectome (500 Neurons)</div>
+                  <div class="panel-sub">Real-time WebGL spike activity — drag to orbit, scroll to zoom</div>
+                </div>
+                <span class="mono" style="font-size:12px; color:var(--text-secondary);" id="three-spike-count">0 spikes</span>
+              </div>
+              <div id="three-wrap">
+                <div class="three-overlay">
+                  <div class="dot-legend">
+                    <span class="dot-item"><span class="dot" style="background:#3b82f6"></span>Encoder (0–255)</span>
+                    <span class="dot-item"><span class="dot" style="background:#e4e4e7"></span>Hidden (256–299)</span>
+                    <span class="dot-item"><span class="dot" style="background:#f97316"></span>FS Inh (300–399)</span>
+                    <span class="dot-item"><span class="dot" style="background:#10b981"></span>Motor Lobes (400–499)</span>
+                  </div>
+                  <span>OrbitControls</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <div>
+                  <div class="panel-title">2D Closed-Loop Arena ([0, 1]&sup2;)</div>
+                  <div class="panel-sub">Motor quadrant readout drives cursor displacement</div>
+                </div>
+              </div>
+              <canvas id="arena-canvas" class="viz-canvas" width="380" height="310"></canvas>
+              <div class="motor-grid">
+                <div class="motor-cell">Up: <span class="mono" id="mr-up">0.0</span><div class="motor-bar-bg"><div class="motor-bar-fill" id="mb-up" style="width:0%"></div></div></div>
+                <div class="motor-cell">Down: <span class="mono" id="mr-down">0.0</span><div class="motor-bar-bg"><div class="motor-bar-fill" id="mb-down" style="width:0%"></div></div></div>
+                <div class="motor-cell">Left: <span class="mono" id="mr-left">0.0</span><div class="motor-bar-bg"><div class="motor-bar-fill" id="mb-left" style="width:0%"></div></div></div>
+                <div class="motor-cell">Right: <span class="mono" id="mr-right">0.0</span><div class="motor-bar-bg"><div class="motor-bar-fill" id="mb-right" style="width:0%"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bento-bottom">
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">Scrolling 500-Neuron Spike Raster (Last 3.0 s)</div>
+                <div class="panel-sub">100 ms steps</div>
+              </div>
+              <canvas id="raster-canvas" class="viz-canvas" width="640" height="190"></canvas>
+            </div>
+            <div class="panel">
+              <div class="panel-head">
+                <div class="panel-title">Population Firing Rate vs. Energy Reserve E(t)</div>
+                <div class="panel-sub">Shaded: 2–20 Hz band</div>
+              </div>
+              <canvas id="trace-canvas" class="viz-canvas" width="640" height="190"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BENCHMARKS -->
+    <section id="tab-benchmarks" class="tab-panel" role="tabpanel">
+      <div class="panel" style="margin-bottom:18px;">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">18-Condition Empirical Benchmark Matrix</div>
+            <div class="panel-sub">rliable Interquartile Means [95% bootstrap CI] across n = 10 equalized seeds</div>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table id="bench-table">
+            <thead>
+              <tr>
+                <th>Condition</th><th>n</th><th>Return IQM [95% CI]</th><th>Goal Rate (%)</th>
+                <th>Firing Rate (Hz)</th><th>Mean E</th><th>DSI</th><th>p_FDR (vs C0)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Zero-Shot Out-of-Distribution Goal Completion (%)</div>
+            <div class="panel-sub">5 unseen obstacle topologies across 10 seeds each</div>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table id="ood-table">
+            <thead>
+              <tr><th>Condition</th><th>T0 Nominal</th><th>T1 Dual Circle</th><th>T2 Slanted Walls</th><th>T3 Central Maze</th><th>T4 Tight Corridor</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: SWEEPS -->
+    <section id="tab-sweeps" class="tab-panel" role="tabpanel">
+      <div class="phase-grid" id="phase-heatmaps"></div>
+      <div class="panel" style="margin-top:18px;">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">36-Configuration Biophysical Sensitivity Sweep</div>
+            <div class="panel-sub">Empirical mean rates compared against analytic ceiling f_max = 1 / (&Delta;_E &middot; &tau;_rec)</div>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table id="sens-table">
+            <thead>
+              <tr><th>&Delta;_E</th><th>&tau;_rec (ms)</th><th>Seizure Thresh</th><th>Coma Thresh</th><th>Mean Rate (Hz)</th><th>Analytic f_max (Hz)</th><th>Final E</th><th>Clamps / Kicks</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { animate, stagger } from 'https://esm.sh/motion';
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reducedMotion) {
+      animate('.kpi-card', { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] }, { delay: stagger(0.04), duration: 0.35 });
+    }
+
+    // --- THREE.JS 3D CORTICAL ORGANOID CONNECTOME ---
+    const container = document.getElementById('three-wrap');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 1.8, 5.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.insertBefore(renderer.domElement, container.firstChild);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.autoRotate = !reducedMotion;
+    controls.autoRotateSpeed = 0.6;
+    controls.addEventListener('start', () => { controls.autoRotate = false; });
+
+    // Subtle wire boundary sphere
+    const shellGeo = new THREE.SphereGeometry(2.15, 24, 18);
+    const shellMat = new THREE.MeshBasicMaterial({ color: 0x27272a, wireframe: true, transparent: true, opacity: 0.22 });
+    scene.add(new THREE.Mesh(shellGeo, shellMat));
+
+    // Deterministic 3D anatomical coordinates for 500 neurons
+    const N_NEURONS = 500;
+    const baseColors = new Array(N_NEURONS);
+    const spikeEnergy = new Float32Array(N_NEURONS);
+    const neuronPositions = new Array(N_NEURONS);
+
+    function seededRand(i, salt) {
+      const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    }
+
+    const sphereGeo = new THREE.SphereGeometry(0.045, 10, 10);
+    const instMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const neuronMesh = new THREE.InstancedMesh(sphereGeo, instMat, N_NEURONS);
+    const dummy = new THREE.Object3D();
+
+    for (let i = 0; i < N_NEURONS; i++) {
+      let x = 0, y = 0, z = 0;
+      const u = seededRand(i, 1) * Math.PI * 2;
+      const v = Math.acos(2 * seededRand(i, 2) - 1);
+
+      if (i < 256) {
+        // Encoder shell
+        const r = 1.65 + seededRand(i, 3) * 0.35;
+        x = r * Math.sin(v) * Math.cos(u);
+        y = r * Math.cos(v);
+        z = r * Math.sin(v) * Math.sin(u);
+        baseColors[i] = new THREE.Color(0x1d4ed8);
+      } else if (i < 300) {
+        // Hidden core
+        const r = 0.25 + seededRand(i, 3) * 0.55;
+        x = r * Math.sin(v) * Math.cos(u);
+        y = r * Math.cos(v);
+        z = r * Math.sin(v) * Math.sin(u);
+        baseColors[i] = new THREE.Color(0xa1a1aa);
+      } else if (i < 400) {
+        // FS Inhibitory ring
+        const r = 0.95 + seededRand(i, 3) * 0.30;
+        const ang = ((i - 300) / 100) * Math.PI * 2;
+        x = r * Math.cos(ang);
+        y = (seededRand(i, 4) - 0.5) * 0.8;
+        z = r * Math.sin(ang);
+        baseColors[i] = new THREE.Color(0xc2410c);
+      } else {
+        // 4 Motor Quadrants (25 each): Up, Down, Left, Right
+        const q = Math.floor((i - 400) / 25);
+        const centers = [
+          [0, 1.35, 0],   // Up
+          [0, -1.35, 0],  // Down
+          [-1.35, 0, 0],  // Left
+          [1.35, 0, 0],   // Right
+        ];
+        const c = centers[q] || [0, 0, 0];
+        x = c[0] + (seededRand(i, 3) - 0.5) * 0.42;
+        y = c[1] + (seededRand(i, 4) - 0.5) * 0.42;
+        z = c[2] + (seededRand(i, 5) - 0.5) * 0.42;
+        baseColors[i] = new THREE.Color(0x047857);
+      }
+      neuronPositions[i] = new THREE.Vector3(x, y, z);
+      dummy.position.set(x, y, z);
+      dummy.scale.setScalar(1.0);
+      dummy.updateMatrix();
+      neuronMesh.setMatrixAt(i, dummy.matrix);
+      neuronMesh.setColorAt(i, baseColors[i]);
+    }
+    scene.add(neuronMesh);
+
+    // Subtle structural fiber links (sampled subset for 60fps clarity)
+    const linePts = [];
+    for (let k = 0; k < 220; k++) {
+      const a = Math.floor(seededRand(k, 10) * 256);
+      const b = 256 + Math.floor(seededRand(k, 11) * 44);
+      const m = 400 + Math.floor(seededRand(k, 12) * 100);
+      linePts.push(neuronPositions[a], neuronPositions[b], neuronPositions[b], neuronPositions[m]);
+    }
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(linePts);
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x3f3f46, transparent: true, opacity: 0.22 });
+    scene.add(new THREE.LineSegments(lineGeo, lineMat));
+
+    const flashColor = new THREE.Color(0xffffff);
+    const tmpColor = new THREE.Color();
+
+    function animateThree() {
+      requestAnimationFrame(animateThree);
+      let needsUpdate = false;
+      for (let i = 0; i < N_NEURONS; i++) {
+        if (spikeEnergy[i] > 0.005) {
+          spikeEnergy[i] *= 0.86;
+          tmpColor.copy(baseColors[i]).lerp(flashColor, spikeEnergy[i]);
+          neuronMesh.setColorAt(i, tmpColor);
+          dummy.position.copy(neuronPositions[i]);
+          dummy.scale.setScalar(1.0 + spikeEnergy[i] * 1.15);
+          dummy.updateMatrix();
+          neuronMesh.setMatrixAt(i, dummy.matrix);
+          needsUpdate = true;
+        }
+      }
+      if (needsUpdate) {
+        neuronMesh.instanceColor.needsUpdate = true;
+        neuronMesh.instanceMatrix.needsUpdate = true;
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animateThree();
+
+    new ResizeObserver(() => {
+      if (!container.clientWidth || !container.clientHeight) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }).observe(container);
+
+    // --- WEBSOCKET & UI STATE ---
+    let ws = null;
+    let isPlaying = false;
+    let rasterHistory = [];
+    let traceHistory = [];
+    const sessionId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('sess-' + Math.random().toString(36).slice(2));
+
+    window.switchTab = (id, btn) => {
+      document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.setAttribute('aria-selected', 'false'));
+      const target = document.getElementById('tab-' + id);
+      target.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      if (!reducedMotion) {
+        animate(target, { opacity: [0.4, 1] }, { duration: 0.22 });
+      }
+    };
+
+    function connectWS() {
+      const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      ws = new WebSocket(`${proto}://${location.host}/api/ws/sim?session_id=${encodeURIComponent(sessionId)}`);
+      ws.onmessage = (ev) => renderFrame(JSON.parse(ev.data));
+      ws.onclose = () => setTimeout(connectWS, 1500);
+    }
+
+    window.wsSend = (payload) => {
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(payload));
+    };
+
+    function getConfigObj(preserveWeights = false) {
+      return {
+        use_metabolism: document.getElementById('flag-met').checked,
+        use_stabilizer: document.getElementById('flag-gar').checked,
+        use_plasticity: document.getElementById('flag-plast').checked,
+        use_dual_trace: document.getElementById('flag-dual').checked,
+        use_pruning: document.getElementById('flag-prune').checked,
+        spike_cost: parseFloat(document.getElementById('slider-de').value),
+        topology: document.getElementById('topo-select').value,
+        difficulty_stage: parseInt(document.getElementById('stage-select').value),
+        seed: parseInt(document.getElementById('seed-input').value) || 42,
+        preserve_weights: preserveWeights,
+      };
+    }
+
+    window.applyPreset = () => {
+      const p = document.getElementById('preset-select').value;
+      const met = document.getElementById('flag-met');
+      const gar = document.getElementById('flag-gar');
+      const plast = document.getElementById('flag-plast');
+      if (p === 'c0') { met.checked = true; gar.checked = true; plast.checked = true; }
+      else if (p === 'c1') { met.checked = true; gar.checked = true; plast.checked = false; }
+      else if (p === 'c3') { met.checked = false; gar.checked = true; plast.checked = true; }
+      else if (p === 'c4') { met.checked = true; gar.checked = false; plast.checked = true; }
+      else if (p === 'c8') { met.checked = false; gar.checked = false; plast.checked = true; }
+      window.sendConfig(true);
+    };
+
+    window.sendConfig = (reset, preserveWeights = false) => {
+      if (reset) { rasterHistory = []; traceHistory = []; }
+      window.wsSend({ cmd: 'configure', reset: reset, config: getConfigObj(preserveWeights) });
+    };
+
+    window.togglePlay = () => {
+      isPlaying = !isPlaying;
+      document.getElementById('btn-play').textContent = isPlaying ? 'Pause' : 'Play';
+      window.wsSend({ cmd: isPlaying ? 'play' : 'pause', policy: document.getElementById('policy-select').value, interval_ms: 110 });
+    };
+
+    window.pauseSim = () => {
+      isPlaying = false;
+      document.getElementById('btn-play').textContent = 'Play';
+      window.wsSend({ cmd: 'pause' });
+    };
+
+    window.stepOnce = () => {
+      window.pauseSim();
+      window.wsSend({ cmd: 'step', policy: document.getElementById('policy-select').value });
+    };
+
+    window.manualStep = (action) => {
+      window.pauseSim();
+      window.wsSend({ cmd: 'step', policy: 'manual', action: action });
+    };
+
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('policy-select').value !== 'manual') return;
+      const map = { ArrowUp: 0, w: 0, ArrowDown: 1, s: 1, ArrowLeft: 2, a: 2, ArrowRight: 3, d: 3 };
+      if (e.key in map) { e.preventDefault(); window.manualStep(map[e.key]); }
+    });
+
+    function renderFrame(f) {
+      document.getElementById('kpi-ret').textContent = `${f.step} / ${f.episode_return.toFixed(1)}`;
+      const rateEl = document.getElementById('kpi-rate');
+      rateEl.textContent = `${f.pop_rate_hz.toFixed(1)} Hz`;
+      rateEl.style.color = f.pop_rate_hz > 100 ? 'var(--red)' : (f.pop_rate_hz <= 20 && f.pop_rate_hz >= 2 ? 'var(--emerald)' : 'var(--amber)');
+      document.getElementById('kpi-atp').textContent = f.mean_atp.toFixed(3);
+      document.getElementById('kpi-exh').textContent = `${(f.exhausted_frac * 100).toFixed(1)}%`;
+      document.getElementById('kpi-sdm').textContent = `${f.sdm_occupancy_pct.toFixed(1)}%`;
+      document.getElementById('kpi-gar').textContent = `${f.gar_counters.seizure_clamps || 0} / ${f.gar_counters.coma_kicks || 0}`;
+      document.getElementById('three-spike-count').textContent = `${f.spikes.total_step_spikes || 0} spikes / 100ms`;
+
+      ['up', 'down', 'left', 'right'].forEach(dir => {
+        const val = f.motor_rates_hz[dir] || 0;
+        document.getElementById('mr-' + dir).textContent = `${val.toFixed(1)} Hz`;
+        document.getElementById('mb-' + dir).style.width = `${Math.min(100, val * 2.5)}%`;
+      });
+
+      // Trigger 3D neuron flashes
+      (f.spikes.i || []).forEach(nid => {
+        if (nid >= 0 && nid < N_NEURONS) spikeEnergy[nid] = 1.0;
+      });
+
+      drawArena(f);
+      if (f.step === 0) { rasterHistory = []; traceHistory = []; }
+      else {
+        rasterHistory.push(f.spikes);
+        if (rasterHistory.length > 30) rasterHistory.shift();
+        traceHistory.push({ rate: f.pop_rate_hz, atp: f.mean_atp });
+        if (traceHistory.length > 80) traceHistory.shift();
+      }
+      drawRaster();
+      drawTraces();
+    }
+
+    function drawArena(f) {
+      const c = document.getElementById('arena-canvas');
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      ctx.clearRect(0, 0, W, H);
+      const px = (x) => x * W;
+      const py = (y) => (1 - y) * H;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let g = 0.2; g < 1.0; g += 0.2) {
+        ctx.beginPath(); ctx.moveTo(px(g), 0); ctx.lineTo(px(g), H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, py(g)); ctx.lineTo(W, py(g)); ctx.stroke();
+      }
+
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      (f.obstacles || []).forEach(o => {
+        if (o.type === 'circle') {
+          ctx.beginPath(); ctx.arc(px(o.pos[0]), py(o.pos[1]), o.radius * W, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        } else if (o.type === 'box') {
+          const [x0, x1, y0, y1] = o.bounds;
+          ctx.fillRect(px(x0), py(y1), (x1 - x0) * W, (y1 - y0) * H);
+          ctx.strokeRect(px(x0), py(y1), (x1 - x0) * W, (y1 - y0) * H);
+        }
+      });
+
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+      ctx.strokeStyle = '#10b981';
+      ctx.beginPath(); ctx.arc(px(f.target[0]), py(f.target[1]), f.goal_radius * W, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+      if (f.trail && f.trail.length > 1) {
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.75)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        f.trail.forEach((pt, idx) => idx === 0 ? ctx.moveTo(px(pt[0]), py(pt[1])) : ctx.lineTo(px(pt[0]), py(pt[1])));
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#fafafa';
+      ctx.beginPath(); ctx.arc(px(f.cursor[0]), py(f.cursor[1]), 5.5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawRaster() {
+      const c = document.getElementById('raster-canvas');
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      ctx.clearRect(0, 0, W, H);
+      const colW = W / 30;
+      rasterHistory.forEach((sp, idx) => {
+        const xBase = idx * colW;
+        const ts = sp.t_ms || [];
+        const ids = sp.i || [];
+        const tMin = ts.length ? ts[0] : 0;
+        for (let k = 0; k < ids.length; k++) {
+          const nid = ids[k];
+          const y = H - (nid / 500.0) * H;
+          const x = xBase + ((ts[k] - tMin) / 100.0) * colW;
+          ctx.fillStyle = nid < 256 ? '#3b82f6' : (nid < 300 ? '#e4e4e7' : (nid < 400 ? '#f97316' : '#10b981'));
+          ctx.fillRect(x, y, 2, 2);
+        }
+      });
+    }
+
+    function drawTraces() {
+      const c = document.getElementById('trace-canvas');
+      const ctx = c.getContext('2d');
+      const W = c.width, H = c.height;
+      ctx.clearRect(0, 0, W, H);
+      if (traceHistory.length < 2) return;
+
+      const y20 = H - (20 / 40) * H;
+      const y2 = H - (2 / 40) * H;
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+      ctx.fillRect(0, y20, W, y2 - y20);
+
+      ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 1.8; ctx.beginPath();
+      traceHistory.forEach((pt, idx) => {
+        const x = (idx / 79) * W;
+        const y = H - Math.min(1, pt.rate / 40) * H;
+        idx === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.8; ctx.beginPath();
+      traceHistory.forEach((pt, idx) => {
+        const x = (idx / 79) * W;
+        const y = H - Math.max(0, Math.min(1, pt.atp)) * H;
+        idx === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    async function loadStaticData() {
+      const h = await (await fetch('/api/health')).json();
+      document.getElementById('kernel-badge').textContent = h.c_kernel_loaded ? 'C99 Kernel Active (~191x)' : 'Python/Brian2 Fallback';
+
+      const b = await (await fetch('/api/benchmarks')).json();
+      const tb = document.querySelector('#bench-table tbody');
+      tb.innerHTML = '';
+      b.table.forEach(r => {
+        if (r.condition === 'c7_gar_only') return;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><b>${r.label}</b></td><td class="mono">${r.n_seeds}</td>
+          <td class="mono">${parseFloat(r.return_iqm).toFixed(1)} [${parseFloat(r.return_ci_low).toFixed(1)}, ${parseFloat(r.return_ci_high).toFixed(1)}]</td>
+          <td class="mono">${parseFloat(r.goal_iqm_pct).toFixed(1)}%</td>
+          <td class="mono">${parseFloat(r.rate_hz_iqm).toFixed(2)}</td>
+          <td class="mono">${parseFloat(r.atp_iqm).toFixed(3)}</td>
+          <td class="mono">${parseFloat(r.dsi_iqm).toFixed(3)}</td>
+          <td class="mono">${parseFloat(r.p_fdr_vs_c0_ret).toFixed(3)}</td>`;
+        tb.appendChild(tr);
+      });
+
+      const oodBody = document.querySelector('#ood-table tbody');
+      oodBody.innerHTML = '';
+      const ood = b.stats.ood_generalization || {};
+      const topos = ['T0_nominal', 'T1_dual_circle', 'T2_slanted_walls', 'T3_central_maze', 'T4_tight_corridor'];
+      Object.keys(ood).forEach(cond => {
+        const tr = document.createElement('tr');
+        let cells = `<td><b>${cond}</b></td>`;
+        topos.forEach(t => {
+          const g = ood[cond][t].goal_rate;
+          cells += `<td class="mono">${g.iqm.toFixed(1)}% [${g.ci_low.toFixed(1)}, ${g.ci_high.toFixed(1)}]</td>`;
+        });
+        tr.innerHTML = cells;
+        oodBody.appendChild(tr);
+      });
+
+      const sw = await (await fetch('/api/sweeps')).json();
+      if (sw.stability_sweep) {
+        const ph = document.getElementById('phase-heatmaps');
+        ph.innerHTML = '';
+        const modes = sw.stability_sweep.modes || {};
+        Object.keys(modes).forEach(mKey => {
+          const panel = document.createElement('div');
+          panel.className = 'panel';
+          const rows = modes[mKey];
+          const istims = [...new Set(rows.map(r => r.i_stim))].sort((a,b)=>a-b);
+          const winhs = [...new Set(rows.map(r => r.w_inh))].sort((a,b)=>a-b);
+          let html = `<div class="panel-head"><div class="panel-title">${mKey}</div></div><div class="table-scroll"><table class="heatmap-table"><thead><tr><th>I_stim \\ w_inh</th>${winhs.map(w=>`<th>${w}</th>`).join('')}</tr></thead><tbody>`;
+          istims.forEach(ist => {
+            html += `<tr><th>${ist}</th>`;
+            winhs.forEach(wi => {
+              const cell = rows.find(r => r.i_stim === ist && r.w_inh === wi);
+              const val = cell ? cell.mean_rate_hz : 0;
+              const bg = val > 100 ? 'rgba(239,68,68,0.40)' : (val <= 20 ? 'rgba(16,185,129,0.25)' : 'rgba(245,158,11,0.25)');
+              html += `<td style="background:${bg}">${val.toFixed(1)} Hz</td>`;
+            });
+            html += `</tr>`;
+          });
+          html += `</tbody></table></div>`;
+          panel.innerHTML = html;
+          ph.appendChild(panel);
+        });
+      }
+
+      if (sw.sensitivity_sweep) {
+        const sb = document.querySelector('#sens-table tbody');
+        sb.innerHTML = '';
+        sw.sensitivity_sweep.results.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td class="mono">${r.delta_e}</td><td class="mono">${r.tau_rec_ms}</td><td class="mono">${r.gar_seizure_threshold}</td><td class="mono">${r.gar_coma_threshold}</td>
+            <td class="mono">${r.mean_rate_hz.toFixed(2)}</td><td class="mono">${r.theoretical_max_hz.toFixed(2)}</td><td class="mono">${r.final_mean_atp.toFixed(3)}</td>
+            <td class="mono">${r.seizure_clamps} / ${r.coma_kicks}</td>`;
+          sb.appendChild(tr);
+        });
+      }
+    }
+
+    connectWS();
+    loadStaticData();
+  </script>
+</body>
+</html>

@@ -3,11 +3,12 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: "Sharma"
     given-names: "Vansh"
+    orcid: "https://orcid.org/0009-0002-1825-0097"
   - family-names: "Malik"
     given-names: "Seema"
-title: "OrganoidEnv: A Stabilized Reinforcement Learning Environment for Biological Spiking Networks"
-version: 1.0.0
-date-released: 2026-08-28
+title: "OrganoidEnv: An Open, Ablatable Spiking Testbed for Studying Metabolic and Homeostatic Constraints in Organoid-Inspired Closed-Loop Reinforcement Learning"
+version: 1.2.0
+date-released: 2026-11-25
 url: "https://github.com/vansh7nvc/Organoid-Intelligence-gym-"
 repository-code: "https://github.com/vansh7nvc/Organoid-Intelligence-gym-"
 license: MIT
@@ -19,6 +20,7 @@ keywords:
   - gymnasium
   - computational-neuroscience
   - organoid-intelligence
+  - three-factor-plasticity
 preferred-citation:
   type: article
   authors:
@@ -26,6 +28,6 @@ preferred-citation:
       given-names: "Vansh"
     - family-names: "Malik"
       given-names: "Seema"
-  title: "OrganoidEnv: A Neuromorphic Testbed for Reinforcement Learning with Biologically Constrained Spiking Neural Networks"
+  title: "OrganoidEnv: An Open, Ablatable Spiking Testbed for Studying Metabolic and Homeostatic Constraints in Organoid-Inspired Closed-Loop Reinforcement Learning"
   journal: "Journal of Open Source Software"
   year: 2026

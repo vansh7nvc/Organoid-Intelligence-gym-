@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-11-11
+
+### Added
+- **Native Lazy-Decay C SNN Kernel (`organoid_rl/environment/_snn_kernel.c`, `fast_snn.py`)**: Exact Brian2-validated integration (`dv <= 1.99e-12`, `dw = 0.00e+00`, `dT <= 5.33e-15`) with batched chunk-power decay and canonical LIF mode (`SimpleSNNEnv`).
+- **Biophysical Exhaustion Clamp & Orthogonal Ablations**: $K_{\mathrm{ATP}}$-like hyperpolarizing exhaustion recovery in `neurons.py`, cross-episode weight preservation (`reset(options={"preserve_weights": True})`), and single-flag orthogonal toggles (`C1`–`C6`), `SimpleSNNEnv`, and `RandomAgent`.
+- **Atomic 12-Key Deterministic Checkpointing (`organoid_rl/utils/checkpointing.py`)**: Bitwise-reproducible mid-episode and mid-training resume across Python/NumPy/PyTorch/Brian2/PER states.
+- **Full Stages 0–5 Verification & Empirical Benchmarks**: 87-test automated verification suite, 60-point 2D stability phase sweep, 65-run multi-seed curriculum campaign (`rliable` IQM + bootstrap CIs + Elephant criticality + 5-topology OOD eval), 12 vector `.pdf`/`.svg` figures, and unified IEEE TNNLS manuscript (`submissions/ieee_tnnls/manuscript.tex`).
+
 ## [1.0.0] - 2026-08-28
 
 ### Added

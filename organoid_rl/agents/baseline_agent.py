@@ -82,3 +82,22 @@ class MLPBaselineAgent:
         # Soft update target
         for target_param, param in zip(self.target_model.parameters(), self.model.parameters()):
             target_param.data.copy_(0.01 * param.data + 0.99 * target_param.data)
+
+
+class RandomAgent:
+    """Uniform random-action baseline agent establishing the task chance floor."""
+
+    def __init__(self, obs_dim=21, n_actions=8, seed=None):
+        self.obs_dim = obs_dim
+        self.n_actions = n_actions
+        self.rng = np.random.default_rng(seed)
+
+    def choose_action(self, state, eval_mode=False):
+        return int(self.rng.integers(0, self.n_actions))
+
+    def store_transition(self, *args, **kwargs):
+        pass
+
+    def learn(self, *args, **kwargs):
+        return 0.0
+

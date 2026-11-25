@@ -2,7 +2,7 @@
 OrganoidEnv: A Stabilized Reinforcement Learning Environment for Biological Spiking Networks
 """
 
-from organoid_rl.environment.core import OrganoidEnv
+from organoid_rl.environment.core import OrganoidEnv, OrganoidConfig
 from organoid_rl.agents.dqn_agent import DQNAgent
 from organoid_rl.agents.baseline_agent import MLPBaselineAgent
 
@@ -12,6 +12,7 @@ __license__ = "MIT"
 
 __all__ = [
     "OrganoidEnv",
+    "OrganoidConfig",
     "DQNAgent",
     "MLPBaselineAgent",
     "__version__",

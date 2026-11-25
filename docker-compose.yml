@@ -1,0 +1,16 @@
+services:
+  platform:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  reproduce:
+    build: .
+    profiles: ["verify"]
+    command: >
+      sh -c "python scripts/verify_reproducibility.py &&
+             pytest tests/ -v &&
+             python scripts/validate_manuscript.py"

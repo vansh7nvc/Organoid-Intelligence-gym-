@@ -1,0 +1,31 @@
+{
+  "condition": "b4_ppo_sb3",
+  "seed": 1024,
+  "ood_topologies": {
+    "T0_nominal": {
+      "mean_return": 166.61300719825158,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.20854101966249683
+    },
+    "T1_dual_circle": {
+      "mean_return": 15.156420147120471,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.16770509831248426
+    },
+    "T2_slanted_walls": {
+      "mean_return": -252.25057147803585,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.22360679774997894
+    },
+    "T3_central_maze": {
+      "mean_return": 15.631738456610247,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.13416407864998742
+    },
+    "T4_tight_corridor": {
+      "mean_return": -23.235142036716844,
+      "goal_rate": 0.0,
+      "mean_final_dist": 0.1788854381999832
+    }
+  }
+}

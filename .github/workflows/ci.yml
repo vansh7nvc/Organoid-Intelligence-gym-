@@ -47,10 +47,6 @@ jobs:
         run: |
           python scripts/verify_reproducibility.py
 
-      - name: Validate manuscript and vector figures
-        run: |
-          python scripts/validate_manuscript.py
-
       - name: Test quickstart example
         run: |
           python examples/01_quickstart.py

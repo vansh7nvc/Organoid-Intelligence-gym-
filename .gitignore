@@ -118,8 +118,18 @@ Thumbs.db
 Desktop.ini
 
 # ==============================================================================
-# Temporary Scratch & Artifacts
+# Temporary Scratch, Artifacts & Private Publication Drafts
 # ==============================================================================
 scratch/
 *.tmp
 *.log
+submissions/
+docs/archive/
+docs/diagnostics/
+docs/drafts/
+docs/plans/
+docs/reviews/
+docs/OrganoidEnv_Revision_Checklist.docx
+docs/OrganoidRL_Roadmap.pdf
+scripts/validate_manuscript.py
+scripts/populate_manuscript_tables.py

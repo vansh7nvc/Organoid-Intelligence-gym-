@@ -12,5 +12,4 @@ services:
     profiles: ["verify"]
     command: >
       sh -c "python scripts/verify_reproducibility.py &&
-             pytest tests/ -v &&
-             python scripts/validate_manuscript.py"
+             pytest tests/ -v"

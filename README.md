@@ -11,7 +11,6 @@
     <a href="https://gymnasium.farama.org/"><img src="https://img.shields.io/badge/Gymnasium-v0.29%2B-008080" alt="Gymnasium"></a>
     <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-v2.0%2B-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch"></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-    <a href="submissions/ieee_tnnls/manuscript.pdf"><img src="https://img.shields.io/badge/IEEE%20TNNLS-Manuscript%20PDF-00629B" alt="IEEE TNNLS Manuscript"></a>
   </p>
 </p>
 
@@ -32,10 +31,6 @@
 **OrganoidEnv** is a fast, reproducible, single-flag-ablatable Gymnasium testbed designed to study how cellular metabolic fatigue, homeostatic regulation, and multi-timescale three-factor plasticity shape closed-loop spiking reinforcement learning.
 
 While modern deep reinforcement learning (RL) relies on unconstrained artificial activations and backpropagation, biological neural substrates operate under **non-differentiable spiking**, **energy-dependent fatigue ($E$)**, **Dale's E/I compartmentalization**, and **local eligibility-modulated plasticity**. `OrganoidEnv` bridges this gap with a native **C99 integration kernel** (`organoid_rl/environment/_snn_kernel.c`) numerically cross-checked against Brian2 ($|\Delta v| = 1.42 \times 10^{-14}\text{ mV}$, **$191.3\times$ speedup** over pure Brian2), enabling large-scale multi-seed ablations and real-time interactive visualization.
-
-<p align="center">
-  <img src="submissions/ieee_tnnls/figures/fig01_architecture_loop.svg" width="88%" alt="OrganoidEnv Closed-Loop Architecture">
-</p>
 
 ---
 
@@ -99,10 +94,6 @@ All results below are computed from late-stage training (episodes `401–500`) u
 | **B3: SimpleSNN (LIF)** | $-75.0\;[-83.5, -66.1]$ | $0.3\%$ | $65.06$ | $1.000$ | $0.160$ |
 | **B5: Random Policy** | $-141.5\;[-142.8, -140.4]$ | $0.0\%$ | $4.60$ | $0.660$ | $0.007$ |
 
-<p align="center">
-  <img src="submissions/ieee_tnnls/figures/fig06_stability_phase_space.svg" width="88%" alt="2D Stability Phase Space Across 4 Control Regimes">
-</p>
-
 * **60-Second Long-Horizon Phase Sweep**: At extreme drive ($I_{\mathrm{stim}}=50, w_{\mathrm{inh}}=5$), unregulated networks sustain **$139.1\text{ Hz}$**, GAR alone oscillates at **$67.1\text{ Hz}$** ($200$ clamps / $200$ kicks), while metabolic fatigue relaxes smoothly to **$12.46\text{ Hz}$** (approaching the $12.0\text{ Hz}$ analytic ceiling).
 * **Transparent Null & Negative Results**: Pruning (`C5`) and GAR (`C4`) are null under nominal drive (`0` seizure clamps across `55,000` spiking episodes); static/fast-trace SNNs match or beat `C0` in return; and rerunning silicon baselines at `step = 0.05` (`B1b/B2b/B4b`) resolves the earlier `step = 0.25` Stage-4/OOD collapse.
 
@@ -125,15 +116,13 @@ Organoid-Intelligence-gym-/
 │   ├── analyze_benchmarks.py      # rliable IQM, bootstrap CIs, BH-FDR, lag-1 branching, Fano
 │   ├── generate_figures.py        # All 13 publication vector figures (.pdf + .svg)
 │   ├── generate_demo_video.py     # Generates docs/assets/organoidenv_demo.{gif,mp4}
-│   └── validate_manuscript.py     # Automated manuscript & figure consistency checker
-├── submissions/ieee_tnnls/        # Camera-ready IEEE TNNLS manuscript, BibTeX, 13 figures, PDF
+│   └── verify_reproducibility.py  # Automated determinism & platform verification
 ├── results/benchmarks/            # 180-run CSVs, telemetry, sweeps, stats_summary.json
-├── tests/                         # Stage 0–5, adversarial, and platform API test suites (84 tests)
+├── tests/                         # Stage 0–5, adversarial, and platform API test suites (85 tests)
 ├── docs/
 │   ├── assets/                    # Demo GIF & MP4 video
-│   ├── diagnostics/               # Phase A diagnostic reports
-│   ├── plans/                     # Revision & verifier roadmaps
-│   └── archive/                   # Superseded drafts & revision snapshots
+│   ├── architecture_flow.mmd      # Architecture Mermaid source
+│   └── architecture_flow.tex      # Architecture TikZ source
 ├── examples/                      # Standalone quickstart, evaluation, and ablation scripts
 ├── pyproject.toml                 # Package metadata, extras (dev, baselines, publication, platform)
 └── README.md
@@ -174,17 +163,13 @@ for _ in range(80):
         obs, info = env.reset(options={"preserve_weights": True})
 ```
 
-### 4. Verification, Paper Figures & PDF Build
+### 4. Verification & Reproducibility Suite
 ```bash
 # Run full test suite (Stages 0–5, adversarial, and platform API tests)
 py -3.11 -m pytest tests/ -v
 
-# Validate manuscript & regenerate all 13 vector figures
-py -3.11 scripts/generate_figures.py
-py -3.11 scripts/validate_manuscript.py
-
-# Compile IEEE TNNLS manuscript PDF locally via bundled Tectonic
-cd submissions/ieee_tnnls && ../../bin/tectonic.exe manuscript.tex
+# Run end-to-end determinism, kernel & multi-session verification
+py -3.11 scripts/verify_reproducibility.py
 ```
 
 ---

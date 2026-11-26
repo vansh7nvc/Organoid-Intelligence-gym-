@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">OrganoidEnv</h1>
   <p align="center">
-    <strong>An Open, Ablatable Spiking Testbed for Studying Metabolic and Homeostatic Constraints in Organoid-Inspired Closed-Loop Reinforcement Learning</strong>
+    <strong>An Open, Ablatable Spiking Reinforcement Learning Testbed &amp; Interactive 3D Neural Workbench</strong>
   </p>
   <p align="center">
     <a href="https://github.com/vansh7nvc/Organoid-Intelligence-gym-/actions/workflows/ci.yml"><img src="https://github.com/vansh7nvc/Organoid-Intelligence-gym-/actions/workflows/ci.yml/badge.svg" alt="CI Status"></a>
@@ -22,134 +22,152 @@
   <img src="docs/assets/organoidenv_demo.gif" width="92%" alt="OrganoidEnv Closed-Loop 3D Connectome, 2D Arena, Spike Raster, and Energy Fatigue Demo">
 </p>
 
-> **Watch full MP4**: [`docs/assets/organoidenv_demo.mp4`](docs/assets/organoidenv_demo.mp4) — Recorded directly from a live C99-accelerated Stage-4 episode (`100 ms` control steps), showing the **3D 500-neuron organoid connectome**, **2D obstacle arena**, **500-neuron spike raster**, and **population firing rate vs. normalized energy reserve $E(t)$**.
+> **Full MP4 Recording**: [`docs/assets/organoidenv_demo.mp4`](docs/assets/organoidenv_demo.mp4) — Recorded from a live C99-accelerated Stage-4 closed-loop episode (`100 ms` control steps), showing the **3D 500-neuron connectome**, **2D obstacle arena**, **500-neuron spike raster**, and **population firing rate vs. energy reserve $E(t)$**.
 
 ---
 
-## Executive Summary
+## Overview
 
-**OrganoidEnv** is a fast, reproducible, single-flag-ablatable Gymnasium testbed designed to study how cellular metabolic fatigue, homeostatic regulation, and multi-timescale three-factor plasticity shape closed-loop spiking reinforcement learning.
+**OrganoidEnv** is a fast, reproducible, single-flag-ablatable Gymnasium environment for closed-loop spiking neural network (SNN) reinforcement learning. It couples a **500-neuron organoid-inspired recurrent spiking network** (80% excitatory / 20% inhibitory Dale's split) to a continuous 2D navigation arena, backed by a native **C99 integration kernel** (`organoid_rl/environment/_snn_kernel.c`) cross-checked against Brian2 ($|\Delta v| \le 1.42 \times 10^{-14}\text{ mV}$, **$191.3\times$ speedup** over pure Brian2) and a real-time **FastAPI + Three.js 3D Web Workbench**.
 
-While modern deep reinforcement learning (RL) relies on unconstrained artificial activations and backpropagation, biological neural substrates operate under **non-differentiable spiking**, **energy-dependent fatigue ($E$)**, **Dale's E/I compartmentalization**, and **local eligibility-modulated plasticity**. `OrganoidEnv` bridges this gap with a native **C99 integration kernel** (`organoid_rl/environment/_snn_kernel.c`) numerically cross-checked against Brian2 ($|\Delta v| = 1.42 \times 10^{-14}\text{ mV}$, **$191.3\times$ speedup** over pure Brian2), enabling large-scale multi-seed ablations and real-time interactive visualization.
+---
+
+## System Architecture
+
+```mermaid
+flowchart LR
+    classDef env fill:#0f172a,stroke:#38bdf8,stroke-width:1.5px,color:#f8fafc
+    classDef ctrl fill:#1e1b4b,stroke:#a78bfa,stroke-width:1.5px,color:#f8fafc
+    classDef snn fill:#064e3b,stroke:#34d399,stroke-width:1.5px,color:#f8fafc
+    classDef reg fill:#451a03,stroke:#f59e0b,stroke-width:1.5px,color:#f8fafc
+
+    subgraph ENV["2D Navigation Environment ([0, 1]^2)"]
+        Arena["Cursor, Target & Obstacles<br/>Stages 1-4 + 5 Topologies"]
+        Obs["21D Observation Vector<br/>10D Neural + 11D Spatial/Prox/Vel"]
+        Rew["Reward Signal R_t<br/>Goal +50 | Shaping | Collision -15"]
+    end
+    class Arena,Obs,Rew env
+
+    subgraph CTRL["Outer RL Controller (D3QN / PPO / Manual)"]
+        Agent["Policy Network<br/>(NoisyNet + PER + HER / Heuristic)"]
+        Act["Discrete Action a_t in {0..7}<br/>8 Cardinal & Diagonal Drives"]
+    end
+    class Agent,Act ctrl
+
+    subgraph SNN["500-Neuron Organoid-Inspired SNN (C99 Kernel, dt = 0.1 ms)"]
+        Enc["Top-k Sparse Encoder (0-255)<br/>256 RS Exc, k=26 active (~10.2%)"]
+        Hid["Hidden Core (256-299)<br/>44 Recurrent RS Exc"]
+        Inh["FS Inhibitory Ring (300-399)<br/>100 Fast-Spiking Interneurons"]
+        Mot["4 Motor Lobes (400-499)<br/>Up / Down / Left / Right (4x25)"]
+    end
+    class Enc,Hid,Inh,Mot snn
+
+    subgraph REG["Biophysical & Homeostatic Mechanisms"]
+        Met["Energy-Fatigue Variable E in [-0.1, 1.0]<br/>K_ATP Clamp + Analytic Ceiling 12 Hz"]
+        GAR["Tri-State GAR (100 ms Window)<br/>Coma Kick (<50) | Seizure Clamp (>5000)"]
+        Plast["Presynaptic Dual-Trace Plasticity<br/>tau1 = 100 ms, tau2 = 2500 ms"]
+    end
+    class Met,GAR,Plast reg
+
+    Arena --> Obs
+    Obs -->|"21D State"| Agent
+    Obs -->|"Top-k Drive"| Enc
+    Agent --> Act
+    Act -->|"Quadrant Current"| Mot
+    Enc --> Hid
+    Hid <--> Inh
+    Hid --> Mot
+    Mot -->|"dx, dy = 0.05*(N_pos - N_neg)"| Arena
+    Arena --> Rew
+    Rew -->|"TD Error"| Agent
+    Rew -->|"Reward Modulation"| Plast
+    Plast -.->|"Delta w"| SNN
+    Met -.->|"Spike Cost Delta_E"| SNN
+    GAR -.->|"Activity Guardrail"| SNN
+```
+
+---
+
+## Environment Specification (`OrganoidEnv`)
+
+### 1. Observation & Action Spaces
+* **Observation Space (`Box(low=-1, high=2, shape=(21,), dtype=float32)`)**:
+  * `obs[0:10]` — 10D normalized neural population firing-rate channels
+  * `obs[10:12]` — Cursor coordinates `(x, y)` in `[0, 1]^2`
+  * `obs[12:14]` — Active target coordinates `(tx, ty)`
+  * `obs[14]` — Context / active target index (`0` or `1`)
+  * `obs[15:19]` — 4D obstacle proximity sensors (North, South, West, East)
+  * `obs[19:21]` — Cursor velocity `(vx, vy)`
+* **Action Space (`Discrete(8)`)**:
+  * `0: Up`, `1: Down`, `2: Left`, `3: Right`, `4: Up-Right`, `5: Up-Left`, `6: Down-Right`, `7: Down-Left`.
+  * Each action stimulates the corresponding motor quadrants; net cursor displacement is driven by motor spike counts: $\Delta x = 0.05\,(N_{\mathrm{right}} - N_{\mathrm{left}})$, $\Delta y = 0.05\,(N_{\mathrm{up}} - N_{\mathrm{down}})$.
+
+### 2. 500-Neuron Compartmental Anatomy
+| Compartment | Indices | Count | Neuron Type | Role |
+| :--- | :---: | :---: | :--- | :--- |
+| **Sparse Encoder** | `0–255` | `256` | Regular-Spiking (RS) Exc | Top-$k$ ($k=26$, $\approx 10.2\%$ active) sensory expansion |
+| **Hidden Core** | `256–299` | `44` | Regular-Spiking (RS) Exc | Recurrent state integration |
+| **Inhibitory Ring** | `300–399` | `100` | Fast-Spiking (FS) Inh | Recurrent E/I feedback inhibition |
+| **Motor Quadrants** | `400–499` | `100` | Regular-Spiking (RS) Exc | `4 x 25` readout clusters (`Up`, `Down`, `Left`, `Right`) |
+
+### 3. Curriculum Stages & Obstacle Topologies
+* **Stage 1**: Open arena, `goal_radius = 0.15`
+* **Stage 2**: Static circular (`pos=[0.5, 0.5], r=0.15`) and rectangular (`[0.2, 0.3, 0.4, 0.8]`) obstacles, `goal_radius = 0.10`
+* **Stage 3**: Dual-target context switching (`[0.8, 0.8]` / `[0.2, 0.2]`), `goal_radius = 0.10`
+* **Stage 4**: Full-precision navigation, `goal_radius = 0.05` (plus 5 evaluation topologies `T0_nominal` through `T4_tight_corridor`)
+
+### 4. Reward Shaping
+* **Goal Reached (`dist < goal_radius`)**: `+50.0` (proximity shaping: `+5.0` if `< 0.15`, `+1.0` if `< 0.30`)
+* **Potential-Based Progress**: `10.0 * (0.99 * (-dist) - (-prev_dist))`
+* **Penalties**: `-0.05` per step, `-15.0` obstacle collision, `-3.0` arena wall contact
+* **Exploration**: `+5.0` halfway waypoint bonus, `+0.5` per newly visited grid cell, `+1.0` near-obstacle clearance
+
+---
+
+## Core Biophysical & Control Mechanisms
+
+1. **Energy-Constrained Izhikevich Neurons ($E$)**:
+   $$\frac{dv}{dt} = \mathbb{I}[E>0]\!\left(0.04v^2 + 5v + 140 - u + I\right) + \mathbb{I}[E\le 0]\!\left(\frac{-80 - v}{0.5\text{ ms}}\right), \quad \frac{dE}{dt} = \frac{1 - E}{\tau_{\mathrm{rec}}}$$
+   Each spike ($v \ge 30$, $E > 0$) deducts $\Delta_E = 0.1$ ($\tau_{\mathrm{rec,exc}} = 1000\text{ ms}$, $\tau_{\mathrm{rec,inh}} = 500\text{ ms}$), establishing an analytic steady-state ceiling $f_{\max} = 1/(\Delta_E \tau_{\mathrm{rec}})$ ($10.0\text{ Hz}$ Exc, $20.0\text{ Hz}$ Inh, $12.0\text{ Hz}$ population-weighted).
+2. **Tri-State Global Activity Regulator (GAR)**:
+   Monitors $100\text{ ms}$ population spikes $N_{\mathrm{recent}}$: NaN/Inf safety reset, Coma Kick ($N_{\mathrm{recent}} < 50$, $<1.0\text{ Hz}$) injecting $5.0\cdot\mathcal{U}(0,1)$, and Seizure Clamp ($N_{\mathrm{recent}} > 5000$, $>100.0\text{ Hz}$) silencing drive and potentiating feedback inhibition.
+3. **Presynaptic Dual-Trace Three-Factor Plasticity**:
+   $$\Delta w_{ij} = \eta_{\mathrm{DA}} R_t \left(\mathrm{Trace1}_{ij} + 0.5\,\mathrm{Trace2}_{ij}\right), \quad \tau_1 = 100\text{ ms}, \; \tau_2 = 2500\text{ ms}$$
+4. **Native C99 Integration Kernel (`_snn_kernel.c`)**:
+   Compiles automatically on Linux/Windows/macOS with lazy exponential trace decay, matching Brian2 subthreshold integration within $1.42 \times 10^{-14}\text{ mV}$ at $\sim 191\times$ speedup.
 
 ---
 
 ## Interactive 3D Web Workbench (`FastAPI` + `Three.js` + `Motion`)
 
-OrganoidEnv ships with a real-time browser workbench (`organoid_rl/platform/`) for live experimentation, single-flag ablations, and dataset exploration:
+Launch the browser-based **3D Organoid Workbench** (`organoid_rl/platform/`) for real-time closed-loop simulation, single-flag ablations, and dataset exploration:
 
 ```bash
 pip install -e ".[platform]"
 py -3.11 scripts/launch_platform.py --port 8000
 ```
 
-* **3D Cortical Organoid Connectome (`Three.js` WebGL)**: Interactive 3D orbital view of all 500 neurons partitioned into Encoder Shell (`0–255`), Hidden Core (`256–299`), FS Inhibitory Ring (`300–399`), and 4 Cardinal Motor Lobes (`400–499`), flashing in real time via WebSocket (`/api/ws/sim`).
-* **Live Single-Flag Ablation Controls**: Toggle Metabolic Fatigue ($E$), GAR Stabilizer, Three-Factor Plasticity, Dual-Trace, Structural Pruning, $\Delta_E$ slider, Curriculum Stages (`1–4`), and all 5 Obstacle Topologies (`T0–T4`) on the fly, or inject `+25` directional probes.
-* **18-Condition Benchmark & Stability Explorers**: Inspect `rliable` IQMs with 95% bootstrap CIs, OOD generalization matrices, 4-regime phase-space heatmaps, and the 36-point biophysical sensitivity sweep.
+* **3D Cortical Organoid Connectome (`Three.js` WebGL)**: Real-time 500-neuron 3D orbital visualization driven via WebSocket (`/api/ws/sim`) with `OrbitControls` and compartment spike flashes.
+* **Live Single-Flag Ablation Controls**: Toggle `use_metabolism`, `use_stabilizer`, `use_plasticity`, `use_dual_trace`, `use_pruning`, $\Delta_E$ slider, curriculum stages (`1–4`), and all 5 topologies (`T0–T4`) on the fly, or inject `+25` directional probes.
+* **Multi-Session Scalability**: Isolated per-user `SimulationSession` instances managed by a thread-safe `SessionManager` (`max_sessions=32`, TTL eviction) with non-blocking `asyncio.to_thread` stepping.
 
 ---
 
-## Key Architectural Modules
+## Quick Start, Docker & Testing
 
-### 1. Energy-Constrained Izhikevich Neurons ($E$)
-Neurons evolve in dimensionless Izhikevich units with an abstract energy-fatigue variable $E \in [-0.1, 1.0]$ inspired by $\mathrm{K}_{\mathrm{ATP}}$ channel dynamics:
-$$\frac{dv}{dt} = \mathbb{I}[E>0]\!\left(0.04v^2 + 5v + 140 - u + I\right) + \mathbb{I}[E\le 0]\!\left(\frac{-80 - v}{0.5\text{ ms}}\right), \quad \frac{dE}{dt} = \frac{1 - E}{\tau_{\mathrm{rec}}}$$
-Each spike ($v \ge 30$, $E > 0$) deducts $\Delta_E = 0.1$ ($\tau_{\mathrm{rec,exc}} = 1000\text{ ms}$, $\tau_{\mathrm{rec,inh}} = 500\text{ ms}$). This yields an **analytic asymptotic ceiling** on sustained population firing:
-$$f_{\max} = \frac{1}{\Delta_E \tau_{\mathrm{rec}}} \implies 10.0\text{ Hz (Exc)}, \; 20.0\text{ Hz (Inh)}, \; 12.0\text{ Hz (Population-Weighted)}$$
-
-### 2. Top-$k$ Sparse Expansion Encoder
-Continuous $15\text{D}$ observations $\mathbf{s}_t$ project through a fixed random matrix $W \in \mathbb{R}^{256 \times 15}$ onto $256$ excitatory input channels; only the top-$k = 26$ channels ($\approx 10.2\%$) receive $+20.0$ depolarizing drive each $100\text{ ms}$ step.
-
-### 3. Tri-State Global Activity Regulator (GAR)
-Monitors total $100\text{ ms}$ population spikes $N_{\mathrm{recent}}$ across $500$ neurons:
-* **Safety Reset**: Resets $v_i \leftarrow -65.0$, $E_i \leftarrow 1.0$ on numerical NaN/Inf.
-* **Coma Kick ($N_{\mathrm{recent}} < 50$, $<1.0\text{ Hz}$)**: Injects stochastic current $5.0 \cdot \mathcal{U}(0, 1)$.
-* **Seizure Clamp ($N_{\mathrm{recent}} > 5000$, $>100.0\text{ Hz}$)**: Silences $I_i \leftarrow 0$, clamps $v_i \leftarrow \min(v_i, -70.0)$, and potentiates feedback inhibition $+2.0$.
-
-### 4. Presynaptic Dual-Trace Three-Factor Plasticity
-Synapses maintain fast ($\tau_1 = 100\text{ ms}$) and slow ($\tau_2 = 2500\text{ ms}$) presynaptic eligibility traces modulated by scalar step reward $R_t$:
-$$\Delta w_{ij} = \eta_{\mathrm{DA}} R_t \left(\mathrm{Trace1}_{ij} + 0.5\,\mathrm{Trace2}_{ij}\right)$$
-
----
-
-## Empirical Results (`18` Conditions $\times$ `10` Equalized Seeds = `180` Runs / `90,000` Episodes)
-
-All results below are computed from late-stage training (episodes `401–500`) using `rliable` Interquartile Means (IQM), 5,000-resample stratified bootstrap 95% CIs, and Benjamini–Hochberg FDR-corrected Mann–Whitney U tests (`results/benchmarks/summary_table.csv`).
-
-| Condition | Return IQM [95% CI] | Goal Rate IQM | Rate (Hz) | Mean $E$ | $p_{\text{FDR}}$ vs C0 |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **C0: Full Model (Reference)** | $-49.5\;[-81.5, -27.1]$ | $32.7\%$ | $6.51$ | $0.586$ | Reference |
-| **C1: Frozen Weights** | $-6.0\;[-27.1, +11.3]$ | $53.7\%$ | $8.08$ | $0.468$ | $0.025$ |
-| **C2: Random SNN** | $+14.7\;[+2.2, +36.4]$ | $63.0\%$ | $8.09$ | $0.479$ | $0.003$ |
-| **C3: No Metabolism (GAR on)** | $-35.1\;[-82.2, -5.9]$ | $0.0\%$ | $17.41$ | $1.000$ | $0.567$ |
-| **C4: No GAR** | $-43.7\;[-65.7, -12.8]$ | $38.3\%$ | $6.72$ | $0.575$ | $0.734$ (null) |
-| **C5: No Pruning** | $-29.5\;[-55.4, -9.9]$ | $41.8\%$ | $7.18$ | $0.544$ | $0.362$ (null) |
-| **C6: Single-Trace (50 ms)** | $-15.6\;[-37.3, +5.2]$ | $55.3\%$ | $8.17$ | $0.471$ | $0.051$ |
-| **C6b: Single-Trace Fast (100 ms)** | $-0.2\;[-18.5, +15.8]$ | $55.3\%$ | $8.32$ | $0.468$ | $0.007$ |
-| **C6c: Single-Trace Slow (2500 ms)** | $-76.5\;[-122.8, -30.6]$ | $24.7\%$ | $5.87$ | $0.633$ | $0.604$ |
-| **C8: Unregulated (No GAR, No Met)** | $-45.2\;[-123.2, -11.8]$ | $0.0\%$ | $17.00$ | $1.000$ | $0.604$ |
-| **B1b: Direct D3QN (`step 0.05`)** | $-32.1\;[-85.3, +30.3]$ | $26.3\%$ | — | — | $0.567$ |
-| **B2b: MLP-DQN (`step 0.05`)** | $+71.5\;[+39.5, +87.3]$ | $41.7\%$ | — | — | $0.003$ |
-| **B4b: PPO (`step 0.05`)** | $+59.2\;[+52.8, +71.8]$ | $56.2\%$ | — | — | $0.002$ |
-| **B3: SimpleSNN (LIF)** | $-75.0\;[-83.5, -66.1]$ | $0.3\%$ | $65.06$ | $1.000$ | $0.160$ |
-| **B5: Random Policy** | $-141.5\;[-142.8, -140.4]$ | $0.0\%$ | $4.60$ | $0.660$ | $0.007$ |
-
-* **60-Second Long-Horizon Phase Sweep**: At extreme drive ($I_{\mathrm{stim}}=50, w_{\mathrm{inh}}=5$), unregulated networks sustain **$139.1\text{ Hz}$**, GAR alone oscillates at **$67.1\text{ Hz}$** ($200$ clamps / $200$ kicks), while metabolic fatigue relaxes smoothly to **$12.46\text{ Hz}$** (approaching the $12.0\text{ Hz}$ analytic ceiling).
-* **Transparent Null & Negative Results**: Pruning (`C5`) and GAR (`C4`) are null under nominal drive (`0` seizure clamps across `55,000` spiking episodes); static/fast-trace SNNs match or beat `C0` in return; and rerunning silicon baselines at `step = 0.05` (`B1b/B2b/B4b`) resolves the earlier `step = 0.25` Stage-4/OOD collapse.
-
----
-
-## Repository Structure
-
-```
-Organoid-Intelligence-gym-/
-├── organoid_rl/
-│   ├── environment/               # Core Gymnasium env, C99 kernel (_snn_kernel.c), GAR, neurons, rewards
-│   ├── agents/                    # D3QN (NoisyNet + PER + HER), MLP-DQN, SB3 PPO, Random
-│   ├── platform/                  # Interactive FastAPI + WebSocket server & Three.js + Motion UI
-│   └── utils/                     # Deterministic 12-key seeding
-├── scripts/
-│   ├── launch_platform.py         # Launch interactive 3D workbench (http://127.0.0.1:8000)
-│   ├── run_benchmarks_parallel.py # Parallel 18-condition multi-seed benchmark runner
-│   ├── run_stability_sweep.py     # 4-mode 2D stability phase sweep
-│   ├── run_revision_diagnostics.py# Clauset power-law GoF, 60s sweeps, ||dw|| & return logs
-│   ├── analyze_benchmarks.py      # rliable IQM, bootstrap CIs, BH-FDR, lag-1 branching, Fano
-│   ├── generate_figures.py        # All 13 publication vector figures (.pdf + .svg)
-│   ├── generate_demo_video.py     # Generates docs/assets/organoidenv_demo.{gif,mp4}
-│   └── verify_reproducibility.py  # Automated determinism & platform verification
-├── results/benchmarks/            # 180-run CSVs, telemetry, sweeps, stats_summary.json
-├── tests/                         # Stage 0–5, adversarial, and platform API test suites (85 tests)
-├── docs/
-│   ├── assets/                    # Demo GIF & MP4 video
-│   ├── architecture_flow.mmd      # Architecture Mermaid source
-│   └── architecture_flow.tex      # Architecture TikZ source
-├── examples/                      # Standalone quickstart, evaluation, and ablation scripts
-├── pyproject.toml                 # Package metadata, extras (dev, baselines, publication, platform)
-└── README.md
-```
-
----
-
-## Quick Start & Reproducibility
-
-### 1. Installation
+### 1. Local Installation
 ```bash
 git clone https://github.com/vansh7nvc/Organoid-Intelligence-gym-.git
 cd Organoid-Intelligence-gym-
 pip install -e ".[dev,platform]"
 ```
 
-### 2. Launch the Interactive 3D Platform
-```bash
-py -3.11 scripts/launch_platform.py --port 8000
-```
-
-### 3. Python Gymnasium API
+### 2. Python Gymnasium API
 ```python
 from organoid_rl import OrganoidEnv
 
 env = OrganoidEnv(
-    use_metabolism=True,   # Energy-fatigue variable E with analytic rate ceiling
+    use_metabolism=True,   # Energy-fatigue variable E
     use_stabilizer=True,   # Tri-state Global Activity Regulator (GAR)
     use_plasticity=True,   # Presynaptic dual-trace three-factor rule
     use_dual_trace=True,   # 100 ms + 2500 ms traces
@@ -163,27 +181,50 @@ for _ in range(80):
         obs, info = env.reset(options={"preserve_weights": True})
 ```
 
-### 4. Verification & Reproducibility Suite
+### 3. Docker & Reproducibility Verification
 ```bash
-# Run full test suite (Stages 0–5, adversarial, and platform API tests)
-py -3.11 -m pytest tests/ -v
+# Run the interactive 3D platform in Docker (port 8000)
+docker compose up platform
 
-# Run end-to-end determinism, kernel & multi-session verification
+# Run full headless reproducibility & test verification in Docker
+docker compose --profile verify run reproduce
+
+# Or run locally:
+py -3.11 -m pytest tests/ -v
 py -3.11 scripts/verify_reproducibility.py
 ```
 
 ---
 
-## Citation
+## Repository Structure
 
-```bibtex
-@article{Sharma2026OrganoidEnv,
-  author  = {Sharma, Vansh and Malik, Seema},
-  title   = {OrganoidEnv: An Open, Ablatable Spiking Testbed for Studying Metabolic and Homeostatic Constraints in Organoid-Inspired Closed-Loop Reinforcement Learning},
-  journal = {IEEE Transactions on Neural Networks and Learning Systems (Submitted)},
-  year    = {2026}
-}
 ```
+Organoid-Intelligence-gym-/
+├── organoid_rl/
+│   ├── environment/               # OrganoidEnv, C99 kernel (_snn_kernel.c), GAR, neurons, rewards
+│   ├── agents/                    # D3QN (NoisyNet + PER + HER), MLP-DQN, SB3 PPO, Random
+│   ├── platform/                  # Multi-session FastAPI + WebSocket server & Three.js + Motion UI
+│   └── utils/                     # Deterministic 12-key seeding
+├── scripts/
+│   ├── launch_platform.py         # Launch interactive 3D workbench (http://127.0.0.1:8000)
+│   ├── run_benchmarks_parallel.py # Parallel multi-seed benchmark & ablation runner
+│   ├── run_stability_sweep.py     # 4-mode 2D stability phase sweep
+│   ├── analyze_benchmarks.py      # Non-parametric IQM, bootstrap CIs, FDR, branching, Fano
+│   ├── generate_demo_video.py     # Generates docs/assets/organoidenv_demo.{gif,mp4}
+│   └── verify_reproducibility.py  # Determinism, C99 kernel & multi-session isolation checks
+├── results/benchmarks/            # Cached benchmark CSVs, telemetry, sweeps, stats_summary.json
+├── tests/                         # Unit, biophysical, adversarial, and platform API test suites
+├── docs/
+│   ├── assets/                    # Demo GIF & MP4 video
+│   ├── architecture_flow.mmd      # Architecture Mermaid source
+│   └── architecture_flow.tex      # Architecture TikZ source
+├── examples/                      # Quickstart, evaluation, and ablation examples
+├── Dockerfile & docker-compose.yml# Containerized platform & reproducible test runner
+├── pyproject.toml                 # Package metadata & optional extras
+└── README.md
+```
+
+---
 
 ## License
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.

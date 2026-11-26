@@ -11,11 +11,14 @@ def main():
     print("Brian2 Sanity Check - Week 1 Day 1")
     print("=" * 60)
     
-    # Configure Cython with MinGW (Optimized for your setup)
-    print("\n[INFO] Configuring Cython backend with MinGW...")
-    prefs.codegen.target = 'cython'
-    prefs.codegen.cpp.compiler = 'mingw32'
-    prefs.codegen.cpp.extra_compile_args = ['-DMS_WIN64']
+    # Configure Cython with MinGW on Windows, or default target elsewhere
+    if sys.platform == "win32":
+        print("\n[INFO] Configuring Cython backend with MinGW...")
+        prefs.codegen.target = 'cython'
+        prefs.codegen.cpp.compiler = 'mingw32'
+        prefs.codegen.cpp.extra_compile_args = ['-DMS_WIN64']
+    else:
+        print("\n[INFO] Using default Brian2 codegen backend...")
     
     try:
         # Create a simple neuron group

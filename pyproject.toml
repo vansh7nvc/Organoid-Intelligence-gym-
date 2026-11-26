@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "organoid_rl"
-version = "1.2.0"
+version = "1.2.1"
 description = "OrganoidEnv: An Open, Ablatable Spiking Testbed for Studying Metabolic and Homeostatic Constraints in Organoid-Inspired Closed-Loop Reinforcement Learning"
 readme = "README.md"
 requires-python = ">=3.9"

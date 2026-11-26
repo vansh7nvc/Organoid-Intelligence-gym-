@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1] - 2026-11-26
+
+### Changed
+- **Zenodo Archival Release**: Version bump (`1.2.1`) to trigger Zenodo DOI minting for the v1.2 codebase, C99 SNN kernel, 3D Three.js workbench, and reproducibility suite.
+
 ## [1.2.0] - 2026-11-26
 
 ### Added
